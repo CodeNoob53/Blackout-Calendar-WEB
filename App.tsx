@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchLatestSchedule, fetchScheduleByDate, getFromCache, saveToCache, CACHE_KEYS } from './services/api';
 import { ScheduleResponse, FetchStatus, QueueData } from './types';
-import Timeline from './components/Timeline';
-import Clock from './components/Clock';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import Timeline from './components/schedule/Timeline';
+import Clock from './components/ui/Clock';
+import Header from './components/layout/Header';
+import Footer from './components/layout/Footer';
 import { formatDate, getLocalISODate, getThreeDayRange, DateOption } from './utils/timeHelper';
 import { Zap, ZapOff, AlertTriangle, RefreshCw, Layers, CalendarDays, Server, Clock as ClockIcon } from 'lucide-react';
 

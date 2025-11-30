@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSquare } from 'lucide-react';
-import { NotificationSettings, NotificationItem, QueueData } from '../types';
-import { fetchNewSchedules, fetchChangedSchedules } from '../services/api';
-import { timeToMinutes } from '../utils/timeHelper';
+import { NotificationSettings, NotificationItem, QueueData } from '../../types';
+import { fetchNewSchedules, fetchChangedSchedules } from '../../services/api';
+import { timeToMinutes } from '../../utils/timeHelper';
 
 interface NotificationCenterProps {
   currentQueueData?: QueueData;
