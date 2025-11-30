@@ -112,13 +112,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
            // Ideally, we would use showNotification from SW, but sending from main thread is easier for now without push sync
            new Notification(title, {
             body,
-            icon: 'https://img.icons8.com/fluency/192/lightning-bolt.png',
+            icon: 'https://img.icons8.com/color/192/high-voltage.png',
             vibrate: [200, 100, 200]
           } as any);
         } else {
           new Notification(title, {
             body,
-            icon: 'https://img.icons8.com/fluency/192/lightning-bolt.png',
+            icon: 'https://img.icons8.com/color/192/high-voltage.png',
           });
         }
       } catch (e) {
