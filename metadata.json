@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Blackout Calendar",
+  "description": "A React application to view power outage schedules and find queue information based on address.",
+  "requestFramePermissions": []
+}
