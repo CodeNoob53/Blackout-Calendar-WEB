@@ -1,0 +1,19 @@
+/* Main Styles Entry Point */
+
+/* Base styles */
+@import url('./base/variables.css');
+@import url('./base/reset.css');
+@import url('./base/typography.css');
+@import url('./base/utilities.css');
+
+/* Component styles */
+@import url('./components/clock.css');
+@import url('./components/theme-toggle.css');
+@import url('./components/header.css');
+@import url('./components/footer.css');
+@import url('./components/timeline.css');
+@import url('./components/notification-center.css');
+@import url('./components/address-search.css');
+
+/* Layout styles */
+@import url('./layout/main.css');

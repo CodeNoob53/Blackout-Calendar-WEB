@@ -4,6 +4,7 @@ import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSq
 import { NotificationSettings, NotificationItem, QueueData } from '../../types';
 import { fetchNewSchedules, fetchChangedSchedules } from '../../services/api';
 import { timeToMinutes } from '../../utils/timeHelper';
+import '../../styles/components/notification-center.css';
 
 interface NotificationCenterProps {
   currentQueueData?: QueueData;
@@ -21,8 +22,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'notifications' | 'settings'>('notifications');
   const [permission, setPermission] = useState<NotificationPermission>('default');
-  
-  // 3) & 4) Persistence check: Settings and History are loaded/saved to localStorage
+
   const [settings, setSettings] = useState<NotificationSettings>(() => {
     try {
       const saved = localStorage.getItem('notification_settings');
@@ -31,7 +31,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       return DEFAULT_SETTINGS;
     }
   });
-  
+
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
     try {
       const saved = localStorage.getItem('notifications_history');
@@ -40,10 +40,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       return [];
     }
   });
-  
+
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
-  
+
   const processedAlerts = useRef<Set<string>>(new Set());
   const processedUpdateIds = useRef<Set<string>>(
     (() => {
@@ -62,7 +62,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     }
   }, []);
 
-  // Toggle Logic with Position Calculation
   const toggleOpen = () => {
     if (!isOpen && buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
@@ -107,9 +106,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   const sendSystemNotification = (title: string, body: string) => {
     if (Notification.permission === 'granted') {
       try {
-        // Check if we are in a Service Worker context (PWA background) or regular window
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-           // Ideally, we would use showNotification from SW, but sending from main thread is easier for now without push sync
            new Notification(title, {
             body,
             icon: 'https://img.icons8.com/?size=192&id=TMhsmDzqlwEO&format=png&color=000000',
@@ -151,7 +148,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         if (timeUntilOff === 30 && !processedAlerts.current.has(offAlertId)) {
           const title = 'Світло зникне скоро';
           const msg = `Увага! Відключення заплановано на ${interval.start}.`;
-          
+
           addNotification({
             title: title,
             message: msg,
@@ -177,7 +174,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           processedAlerts.current.add(onAlertId);
         }
       });
-    }, 60000); 
+    }, 60000);
 
     return () => clearInterval(checkInterval);
   }, [settings.lightAlerts, settings.nightMode, currentQueueData, isToday]);
@@ -194,7 +191,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
               if (!processedUpdateIds.current.has(id)) {
                 const title = 'Новий графік';
                 const msg = item.pushMessage || `Доступний графік на ${item.date}`;
-                
+
                 addNotification({
                   title: title,
                   message: msg,
@@ -265,129 +262,98 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
   return (
     <>
-      <button 
+      <button
         ref={buttonRef}
         onClick={toggleOpen}
-        className="p-2 rounded-xl border relative transition-all duration-200
-        bg-white/70 border-nature-700/10 hover:bg-white/90 text-nature-800
-        dark:bg-gray-800/50 dark:border-white/5 dark:hover:bg-gray-700/50 dark:text-amber-500"
+        className="notification-button"
       >
-        <Bell className="h-5 w-5 fill-current" />
+        <Bell className="notification-button__icon" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+          <span className="notification-button__badge">
+            <span className="notification-button__badge-ping"></span>
+            <span className="notification-button__badge-dot"></span>
           </span>
         )}
       </button>
 
       {isOpen && createPortal(
         <>
-          {/* Backdrop */}
-          <div 
-            className="fixed inset-0 bg-black/20 dark:bg-black/60 backdrop-blur-sm z-[90]" 
+          <div
+            className="notification-backdrop"
             onClick={() => setIsOpen(false)}
           />
-          
-          {/* Modal Content */}
-          <div 
-            className="fixed z-[100] bg-white dark:bg-[#0F172A] shadow-2xl overflow-hidden border transition-colors duration-300
-              border-nature-200 dark:border-white/10
-              animate-in fade-in zoom-in-95 duration-200
-              inset-x-0 bottom-0 top-auto rounded-t-2xl sm:inset-auto sm:w-96 sm:rounded-2xl"
+
+          <div
+            className="notification-modal"
             style={{
-               // On Desktop, position relative to button
                top: window.innerWidth >= 640 ? position.top : 'auto',
                right: window.innerWidth >= 640 ? position.right : 0,
             }}
           >
-            
-            {/* Header Tabs */}
-            <div className="flex items-center justify-between px-4 py-3 border-b transition-colors duration-300
-              bg-nature-50/80 border-nature-200
-              dark:bg-[#1e293b] dark:border-white/10">
-               <div className="flex space-x-6">
-                  <button 
+            <div className="notification-modal__header">
+               <div className="notification-modal__tabs">
+                  <button
                     onClick={() => setActiveTab('notifications')}
-                    className={`text-sm font-bold transition-colors ${
-                      activeTab === 'notifications' 
-                      ? 'text-nature-700 dark:text-amber-500' 
-                      : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white'
-                    }`}
+                    className={`notification-modal__tab ${activeTab === 'notifications' ? 'notification-modal__tab--active' : ''}`}
                   >
                     Сповіщення ({unreadCount})
                   </button>
-                  <button 
+                  <button
                      onClick={() => setActiveTab('settings')}
-                     className={`text-sm font-bold transition-colors ${
-                       activeTab === 'settings' 
-                       ? 'text-nature-700 dark:text-amber-500' 
-                       : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white'
-                     }`}
+                     className={`notification-modal__tab ${activeTab === 'settings' ? 'notification-modal__tab--active' : ''}`}
                   >
                      Налаштування
                   </button>
                </div>
-               <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-white transition-colors">
-                  <X className="h-5 w-5" />
+               <button
+                 onClick={() => setIsOpen(false)}
+                 className="notification-modal__close"
+               >
+                  <X className="notification-modal__close-icon" />
                </button>
             </div>
 
-            {/* Content Area */}
-            <div className="h-[50vh] sm:h-auto sm:max-h-[60vh] overflow-y-auto bg-white dark:bg-[#0F172A]">
+            <div className="notification-modal__content">
               {activeTab === 'notifications' ? (
-                <div className="p-3 space-y-3">
-                  <div className="flex justify-end gap-3 px-1 mb-2">
-                    <button onClick={markAllRead} className="text-[10px] text-gray-500 hover:text-nature-600 dark:text-gray-500 dark:hover:text-amber-500 flex items-center transition-colors">
-                      <Check className="h-3 w-3 mr-1" /> Позначити прочитаним
+                <div className="notifications-tab">
+                  <div className="notifications-tab__actions">
+                    <button onClick={markAllRead} className="notifications-tab__action">
+                      <Check className="notifications-tab__action-icon" /> Позначити прочитаним
                     </button>
-                    <button onClick={clearHistory} className="text-[10px] text-gray-500 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-500 flex items-center transition-colors">
-                      <Trash2 className="h-3 w-3 mr-1" /> Очистити
+                    <button onClick={clearHistory} className="notifications-tab__action notifications-tab__action--delete">
+                      <Trash2 className="notifications-tab__action-icon" /> Очистити
                     </button>
                   </div>
-                  
+
                   {notifications.length === 0 ? (
-                    <div className="py-20 text-center flex flex-col items-center text-gray-400 dark:text-gray-600">
-                      <Bell className="h-10 w-10 mb-3 opacity-30" />
-                      <p className="text-sm">Сповіщень поки немає</p>
+                    <div className="notifications-empty">
+                      <Bell className="notifications-empty__icon" />
+                      <p className="notifications-empty__text">Сповіщень поки немає</p>
                     </div>
                   ) : (
-                    <div className="space-y-2">
+                    <div className="notifications-list">
                       {notifications.map((n) => (
-                        <div key={n.id} className={`relative p-4 rounded-2xl border transition-all duration-200
-                          ${n.type === 'warning' 
-                            ? 'border-amber-200 bg-amber-50/50 dark:border-amber-500/30 dark:bg-[#1a1a1a]' 
-                            : n.type === 'info' 
-                              ? 'border-blue-200 bg-blue-50/50 dark:border-blue-500/30 dark:bg-[#1a1a1a]' 
-                              : 'border-nature-200 bg-nature-50/50 dark:border-green-500/30 dark:bg-[#1a1a1a]'}
-                          hover:bg-nature-50 dark:hover:bg-[#252525]`}
+                        <div
+                          key={n.id}
+                          className={`notification-item notification-item--${n.type}`}
                         >
-                          <div className="flex items-start gap-3">
-                             {/* Icon */}
-                             <div className={`mt-0.5 min-w-[24px] h-6 w-6 flex items-center justify-center rounded-full
-                                ${n.type === 'warning' 
-                                  ? 'text-amber-600 bg-amber-100 dark:text-amber-500 dark:bg-amber-500/10' 
-                                  : n.type === 'success' 
-                                    ? 'text-nature-600 bg-nature-100 dark:text-green-500 dark:bg-green-500/10' 
-                                    : 'text-blue-600 bg-blue-100 dark:text-blue-500 dark:bg-blue-500/10'}`}
-                             >
-                               {n.type === 'info' ? <Calendar className="h-3.5 w-3.5" /> :
-                                n.type === 'warning' ? <AlertTriangle className="h-3.5 w-3.5" /> :
-                                <CheckCircle className="h-3.5 w-3.5" />}
+                          <div className="notification-item__content">
+                             <div className={`notification-item__icon-wrapper notification-item__icon-wrapper--${n.type}`}>
+                               {n.type === 'info' ? <Calendar className="notification-item__icon" /> :
+                                n.type === 'warning' ? <AlertTriangle className="notification-item__icon" /> :
+                                <CheckCircle className="notification-item__icon" />}
                              </div>
 
-                             {/* Content */}
-                             <div className="flex-1 min-w-0">
-                                <h4 className="text-sm font-bold leading-tight mb-1 text-nature-900 dark:text-gray-100">{n.title}</h4>
-                                <p className="text-xs leading-relaxed break-words text-nature-700 dark:text-gray-400">{n.message}</p>
-                                <span className="text-[10px] font-mono mt-2 block text-gray-500 dark:text-gray-600">
+                             <div className="notification-item__body">
+                                <h4 className="notification-item__title">{n.title}</h4>
+                                <p className="notification-item__message">{n.message}</p>
+                                <span className="notification-item__time">
                                   {new Date(n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                              </div>
 
-                             {/* Unread Indicator */}
                              {!n.read && (
-                               <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.6)] flex-shrink-0 mt-1.5" />
+                               <div className="notification-item__unread-dot" />
                              )}
                           </div>
                         </div>
@@ -396,20 +362,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   )}
                 </div>
               ) : (
-                <div className="p-4 space-y-4">
-                  {/* Permissions Request */}
+                <div className="settings-tab">
                   {permission === 'default' && (
-                    <div className="p-3 mb-4 rounded-xl border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-500/30">
-                       <h4 className="text-sm font-bold text-blue-800 dark:text-blue-300 mb-1 flex items-center gap-2">
-                         <MessageSquare className="w-4 h-4" />
+                    <div className="permission-banner permission-banner--request">
+                       <h4 className="permission-banner__title">
+                         <MessageSquare className="permission-banner__title-icon" />
                          Системні сповіщення
                        </h4>
-                       <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
+                       <p className="permission-banner__text">
                          Дозвольте надсилати сповіщення, щоб не пропустити відключення, коли сайт згорнуто.
                        </p>
-                       <button 
+                       <button
                          onClick={requestPermission}
-                         className="w-full py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-xs font-bold transition-colors"
+                         className="permission-banner__button"
                        >
                          Увімкнути
                        </button>
@@ -417,58 +382,53 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   )}
 
                   {permission === 'denied' && (
-                     <div className="p-3 mb-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-500/30">
-                       <p className="text-xs text-red-600 dark:text-red-400">
+                     <div className="permission-banner permission-banner--denied">
+                       <p className="permission-banner__text permission-banner__text--denied">
                          Сповіщення заблоковано в налаштуваннях браузера. Увімкніть їх вручну, щоб отримувати нагадування.
                        </p>
                     </div>
                   )}
 
-                  <div className="rounded-xl border divide-y transition-colors duration-300
-                    bg-nature-50/50 border-nature-200 divide-nature-200
-                    dark:bg-[#1e293b]/50 dark:border-white/5 dark:divide-white/5">
-                    
+                  <div className="settings-list">
                     {[
-                      { 
-                        id: 'lightAlerts', 
-                        label: 'Сповіщення про світло', 
+                      {
+                        id: 'lightAlerts',
+                        label: 'Сповіщення про світло',
                         sub: 'За 30 хв до події',
-                        val: settings.lightAlerts 
+                        val: settings.lightAlerts
                       },
-                      { 
-                        id: 'nightMode', 
-                        label: 'Не турбувати вночі', 
+                      {
+                        id: 'nightMode',
+                        label: 'Не турбувати вночі',
                         sub: 'Тиша з 22:00 до 08:00',
-                        val: settings.nightMode 
+                        val: settings.nightMode
                       },
-                      { 
-                        id: 'scheduleUpdates', 
-                        label: 'Зміни графіку', 
+                      {
+                        id: 'scheduleUpdates',
+                        label: 'Зміни графіку',
                         sub: 'Оновлення даних',
-                        val: settings.scheduleUpdates 
+                        val: settings.scheduleUpdates
                       },
-                      { 
-                        id: 'tomorrowSchedule', 
-                        label: 'Графік на завтра', 
+                      {
+                        id: 'tomorrowSchedule',
+                        label: 'Графік на завтра',
                         sub: 'Нові публікації',
-                        val: settings.tomorrowSchedule 
+                        val: settings.tomorrowSchedule
                       }
                     ].map((item) => (
-                      <div key={item.id} className="flex items-center justify-center p-4">
-                        <div className="flex-1">
-                          <h4 className="text-sm font-bold text-nature-900 dark:text-gray-200">{item.label}</h4>
-                          <p className="text-xs text-nature-500 dark:text-gray-500 mt-0.5">{item.sub}</p>
+                      <div key={item.id} className="settings-list__item">
+                        <div className="settings-list__item-content">
+                          <h4 className="settings-list__item-label">{item.label}</h4>
+                          <p className="settings-list__item-sublabel">{item.sub}</p>
                         </div>
-                        <button 
+                        <button
                           onClick={() => setSettings(s => ({ ...s, [item.id]: !item.val }))}
-                          className={`w-11 h-6 rounded-full p-1 transition-colors duration-200 ease-in-out shrink-0
-                            ${item.val ? 'bg-nature-500 dark:bg-amber-600' : 'bg-gray-300 dark:bg-gray-700'}`}
+                          className={`toggle-switch ${item.val ? 'toggle-switch--on' : ''}`}
                         >
-                          <div className={`w-4 h-4 rounded-full bg-white shadow-sm transform transition-transform duration-200 ${item.val ? 'translate-x-5' : 'translate-x-0'}`} />
+                          <div className="toggle-switch__handle" />
                         </button>
                       </div>
                     ))}
-                    
                   </div>
                 </div>
               )}

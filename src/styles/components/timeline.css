@@ -1,0 +1,185 @@
+/* Timeline Component - BEM */
+
+.timeline {
+  position: relative;
+  width: 100%;
+  height: 5rem;
+  margin-top: var(--space-8);
+  margin-bottom: var(--space-4);
+  user-select: none;
+}
+
+/* Main track showing power ON state */
+.timeline__track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2.5rem;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 1px solid rgb(0 0 0 / 5%);
+  transition: var(--transition-colors);
+  z-index: 0;
+  transform: translateZ(0);
+
+  /* Light theme gradient */
+  background: linear-gradient(to right,
+      var(--color-nature-500),
+      var(--color-nature-400),
+      var(--color-nature-500));
+  box-shadow: 0 0 20px rgb(139 195 74 / 30%);
+}
+
+.dark .timeline__track {
+  background: var(--color-primary);
+  box-shadow: 0 0 20px rgb(255 179 0 / 25%);
+  border-color: rgb(255 255 255 / 10%);
+}
+
+/* Outage blocks (dark overlays) */
+.timeline__outage {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid rgb(69 90 100 / 50%);
+  border-right: 1px solid rgb(69 90 100 / 50%);
+  transition: var(--transition-colors);
+  z-index: 10;
+  background: rgb(55 71 79 / 90%);
+}
+
+.dark .timeline__outage {
+  background: var(--color-slate-800);
+  border-left-color: rgb(31 41 55 / 50%);
+  border-right-color: rgb(31 41 55 / 50%);
+}
+
+/* Pattern overlay for outage blocks */
+.timeline__outage-pattern {
+  width: 100%;
+  height: 100%;
+  opacity: 0.3;
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0IiBoZWlnaHQ9IjQiPgo8cmVjdCB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSIjZmZmIi8+CjxwYXRoIGQ9Ik0wIDBMNCA0Wk00IDBMMCA0WiIgc3Ryb2tlPSIjMDAwIiBzdHJva2Utd2lkdGg9IjEiLz4KPC9zdmc+');
+}
+
+/* Current time indicator */
+.timeline__current-time {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-error);
+  z-index: 20;
+  box-shadow: 0 0 8px rgb(239 68 68 / 80%);
+}
+
+.timeline__current-time-dot {
+  position: absolute;
+  top: -0.25rem;
+  left: -3px;
+  width: 0.5rem;
+  height: 0.5rem;
+  background: var(--color-error);
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 4px rgb(239 68 68 / 100%);
+}
+
+/* Time markers container */
+.timeline__markers {
+  position: absolute;
+  top: 2.75rem;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.625rem;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  transition: var(--transition-colors);
+  color: rgb(51 105 30 / 60%);
+}
+
+.dark .timeline__markers {
+  color: var(--color-gray-500);
+}
+
+.timeline__marker {
+  position: relative;
+}
+
+.timeline__marker-label {
+  position: absolute;
+  transform: translateX(-50%);
+}
+
+.timeline__marker-tick {
+  position: absolute;
+  top: -0.5rem;
+  left: 0;
+  height: 0.25rem;
+  width: 1px;
+  transform: translateX(-50%);
+  transition: var(--transition-colors);
+  background: rgb(85 139 47 / 20%);
+}
+
+.dark .timeline__marker-tick {
+  background: var(--color-gray-700);
+}
+
+/* Legend */
+.timeline__legend {
+  position: absolute;
+  bottom: -0.25rem;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: var(--space-6);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  transition: var(--transition-colors);
+  color: rgb(85 139 47 / 80%);
+}
+
+.dark .timeline__legend {
+  color: var(--color-gray-500);
+}
+
+.timeline__legend-item {
+  display: flex;
+  align-items: center;
+}
+
+.timeline__legend-indicator {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-full);
+  margin-right: var(--space-2);
+  transition: var(--transition-colors);
+}
+
+.timeline__legend-indicator--power-on {
+  background: var(--color-nature-500);
+  box-shadow: 0 0 5px rgb(139 195 74 / 50%);
+}
+
+.dark .timeline__legend-indicator--power-on {
+  background: var(--color-primary);
+  box-shadow: 0 0 5px rgb(255 179 0 / 50%);
+}
+
+.timeline__legend-indicator--outage {
+  background: var(--color-blue-grey-800);
+  border: 1px solid var(--color-blue-grey-600);
+}
+
+.dark .timeline__legend-indicator--outage {
+  background: var(--color-slate-800);
+  border-color: var(--color-gray-600);
+}
