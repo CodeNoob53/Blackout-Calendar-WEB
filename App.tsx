@@ -6,7 +6,7 @@ import Clock from './components/Clock';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import { formatDate, getLocalISODate, getThreeDayRange, DateOption } from './utils/timeHelper';
-import { Zap, ZapOff, AlertTriangle, RefreshCw, Layers, CalendarDays, Server } from 'lucide-react';
+import { Zap, ZapOff, AlertTriangle, RefreshCw, Layers, CalendarDays, Server, Clock as ClockIcon } from 'lucide-react';
 
 // Common queue identifiers (Expanded to 12 queues as requested)
 const ALL_QUEUES = [
@@ -31,7 +31,9 @@ const App: React.FC = () => {
   
   // 1) Persistence check: userQueue is loaded from localStorage
   const [userQueue, setUserQueue] = useState<string | null>(() => localStorage.getItem('userQueue'));
-  const [viewQueue, setViewQueue] = useState<string>('1.1'); // Default view queue
+  
+  // Initialize viewQueue with the saved userQueue immediately to prevent flashing '1.1' on reload
+  const [viewQueue, setViewQueue] = useState<string>(() => localStorage.getItem('userQueue') || '1.1');
 
   // 5) Persistence check: theme is loaded from localStorage
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
@@ -100,7 +102,15 @@ const App: React.FC = () => {
         } else if (!cachedData) {
            // Only set error if we don't have cached data
            setScheduleData(null);
+           setIsUsingCache(false); // Server responded (with 404), so we are not offline
            setStatus('success'); // It's a "success" that we found nothing, visually handled by empty state
+        } else {
+           // We have cache, but server returned 404. 
+           if (data === null) {
+              // Server said 404 explicitly
+              setIsUsingCache(false);
+              setStatus('success');
+           }
         }
       } catch (err) {
         console.error("Network error:", err);
@@ -109,6 +119,7 @@ const App: React.FC = () => {
         } else {
            // Use cached data silently, maybe show toast
            setStatus('success'); 
+           // Keep isUsingCache = true
         }
       } finally {
         if (wakeUpTimer) clearTimeout(wakeUpTimer);
@@ -150,11 +161,20 @@ const App: React.FC = () => {
          setIsUsingCache(false);
          setStatus('success');
       } else if (!cachedData) {
+         // Case: No cache, and Server returns 404 (null)
          setScheduleData(null);
+         setIsUsingCache(false); // Important: Server responded, so we aren't using "cache mode" due to failure
+         setStatus('success'); // Explicitly set success to stop loading spinner
+      } else {
+         // Case: We have cache, but Server returned 404.
+         setScheduleData(null);
+         setIsUsingCache(false);
+         setStatus('success');
       }
     } catch (err) {
-      // If error, keep showing cache if available
+      // If error (Network fail), keep showing cache if available
       if (!cachedData) setScheduleData(null);
+      // isUsingCache remains true if it was true
       setStatus('success'); 
     }
   };
@@ -191,7 +211,7 @@ const App: React.FC = () => {
       <main className="max-w-3xl mx-auto px-4 space-y-6">
 
         {/* TOP SECTION: Clock & Date Selector */}
-        <section className="backdrop-blur-xl rounded-[2rem] p-2 shadow-2xl border transition-all duration-300
+        <section className="backdrop-blur-xl rounded-[2rem] p-2 shadow-2xl border transition-all duration-300 transform-gpu
           bg-white/85 border-white/40 shadow-nature-900/10
           dark:bg-gray-800/40 dark:border-white/5 dark:shadow-black/50">
            <div className="grid grid-cols-4 gap-2 h-[5.5rem]">
@@ -205,21 +225,21 @@ const App: React.FC = () => {
                       <button
                           key={opt.iso}
                           onClick={() => handleDateChange(opt.iso)}
-                          className={`flex flex-col items-center justify-center w-full h-full rounded-[1.5rem] transition-all duration-300 relative overflow-hidden border
+                          className={`flex flex-col items-center justify-center w-full h-full rounded-[1.5rem] transition-all duration-300 relative overflow-hidden border transform-gpu
                           ${isSelected 
                               ? 'bg-white border-nature-300 shadow-md text-nature-900 dark:bg-gray-700/80 dark:border-gray-600 dark:shadow-inner dark:text-white' 
                               : 'bg-white/70 border-transparent text-nature-800 hover:bg-white/90 dark:bg-gray-800/40 dark:text-gray-500 dark:hover:bg-gray-700/50'
                           }`}
                       >
-                          <span className={`text-xs uppercase font-bold tracking-wider mb-1 transition-colors ${isSelected ? 'text-nature-800 dark:text-gray-300' : ''}`}>
+                          <span className={`text-xs uppercase font-bold tracking-wider mb-1 transition-colors relative z-10 ${isSelected ? 'text-nature-800 dark:text-gray-300' : ''}`}>
                               {opt.weekday}
                           </span>
-                          <span className={`text-2xl font-bold leading-none transition-colors ${isSelected ? '' : 'opacity-60'}`}>
+                          <span className={`text-2xl font-bold leading-none transition-colors relative z-10 ${isSelected ? '' : 'opacity-60'}`}>
                               {opt.day}
                           </span>
                           {/* Indicator dot for Today if not selected */}
                           {opt.isToday && !isSelected && (
-                             <span className="absolute bottom-2 w-1 h-1 rounded-full bg-nature-500 dark:bg-amber-500/80 shadow-[0_0_5px_rgba(245,158,11,0.8)]"></span>
+                             <span className="absolute bottom-2 w-1 h-1 rounded-full bg-nature-500 dark:bg-amber-500/80 shadow-[0_0_5px_rgba(245,158,11,0.8)] z-10"></span>
                           )}
                       </button>
                   );
@@ -228,7 +248,7 @@ const App: React.FC = () => {
         </section>
 
         {/* Queue Selector (Full Width) */}
-        <section className="backdrop-blur-xl rounded-2xl p-6 shadow-xl border transition-all duration-300
+        <section className="backdrop-blur-xl rounded-2xl p-6 shadow-xl border transition-all duration-300 transform-gpu
           bg-white/85 border-white/40 shadow-nature-900/10
           dark:bg-gray-800/40 dark:border-white/5 dark:shadow-black/50">
             <div className="flex items-center justify-between mb-5">
@@ -249,15 +269,15 @@ const App: React.FC = () => {
                 <button
                 key={q}
                 onClick={() => handleQueueSelect(q)}
-                className={`py-3 rounded-xl font-bold text-sm transition-all duration-200 border relative overflow-hidden
+                className={`py-3 rounded-xl font-bold text-sm transition-all duration-200 border relative overflow-hidden group transform-gpu
                 ${viewQueue === q
                     ? 'bg-nature-500 text-white border-nature-400 shadow-lg shadow-nature-500/30 dark:bg-amber-500 dark:text-gray-900 dark:border-amber-400 dark:shadow-[0_0_20px_rgba(245,158,11,0.4)]'
                     : 'bg-white/70 text-nature-800 border-gray-200 hover:border-nature-300 hover:bg-white hover:text-nature-900 dark:bg-gray-900/50 dark:text-gray-400 dark:border-white/5 dark:hover:border-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-200'
                 }`}
                 >
-                  {q}
+                  <span className="relative z-10">{q}</span>
                   {viewQueue === q && (
-                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-50"></div>
+                    <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 opacity-50 z-0"></div>
                   )}
                 </button>
             ))}
@@ -265,7 +285,7 @@ const App: React.FC = () => {
         </section>
 
         {/* Visualization Card */}
-        <section className="backdrop-blur-xl rounded-2xl p-6 shadow-2xl border relative overflow-hidden min-h-[16rem] transition-all duration-300
+        <section className="backdrop-blur-xl rounded-2xl p-6 shadow-2xl border relative overflow-hidden min-h-[16rem] transition-all duration-300 transform-gpu
           bg-white/85 border-white/40 shadow-nature-900/10
           dark:bg-gray-800/40 dark:border-white/5 dark:shadow-black/50">
           
@@ -307,15 +327,34 @@ const App: React.FC = () => {
             </div>
           ) : !scheduleData || !currentQueueData ? (
              <div className="h-48 flex flex-col items-center justify-center rounded-xl border border-dashed mt-4 transition-colors
-               bg-gray-5 text-gray-500 border-gray-200
+               bg-gray-50 text-gray-500 border-gray-200
                dark:text-gray-500 dark:bg-gray-900/20 dark:border-white/5">
-                <div className="p-4 rounded-full mb-3 ring-1 transition-colors
-                  bg-white ring-gray-100
-                  dark:bg-gray-800/50 dark:ring-white/5">
-                   <Zap className="h-6 w-6 text-gray-400 dark:text-gray-600" />
-                </div>
-                <p className="font-medium text-gray-600 dark:text-gray-400">Даних про відключення немає</p>
-                <p className="text-xs text-gray-500 dark:text-gray-600 mt-1">Можливо, світло не вимикатимуть</p>
+                
+                {selectedDate > getLocalISODate() ? (
+                    // Future Date - Not Published Yet State
+                    <>
+                        <div className="p-4 rounded-full mb-3 ring-1 transition-colors
+                        bg-white ring-amber-100
+                        dark:bg-gray-800/50 dark:ring-amber-500/20">
+                            <ClockIcon className="h-6 w-6 text-amber-500/70" />
+                        </div>
+                        <p className="font-medium text-gray-600 dark:text-gray-400">Графік ще не опубліковано</p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1 max-w-[200px] text-center">
+                            Інформація зазвичай з'являється ввечері попереднього дня
+                        </p>
+                    </>
+                ) : (
+                    // Today/Past - No Outages State
+                    <>
+                        <div className="p-4 rounded-full mb-3 ring-1 transition-colors
+                        bg-white ring-gray-100
+                        dark:bg-gray-800/50 dark:ring-white/5">
+                            <Zap className="h-6 w-6 text-gray-400 dark:text-gray-600" />
+                        </div>
+                        <p className="font-medium text-gray-600 dark:text-gray-400">Даних про відключення немає</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-600 mt-1">Можливо, світло не вимикатимуть</p>
+                    </>
+                )}
              </div>
           ) : (
             <>

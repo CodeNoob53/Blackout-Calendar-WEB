@@ -15,12 +15,12 @@ const Timeline: React.FC<TimelineProps> = ({ intervals, isToday }) => {
 
   return (
     <div className="relative w-full h-20 mt-8 mb-4 select-none">
-      {/* Background track (Light indicates power ON) */}
-      <div className="absolute top-0 left-0 w-full h-10 rounded-lg overflow-hidden ring-1 transition-colors duration-300
+      {/* Background track (Light indicates power ON) - Z-0 */}
+      <div className="absolute top-0 left-0 w-full h-10 rounded-lg overflow-hidden ring-1 transition-colors duration-300 transform-gpu z-0
         bg-gradient-to-r from-nature-500 via-nature-400 to-nature-500 shadow-[0_0_20px_rgba(139,195,74,0.3)] ring-black/5
         dark:bg-gradient-to-r dark:from-amber-500 dark:via-amber-400 dark:to-amber-500 dark:shadow-[0_0_20px_rgba(245,158,11,0.15)] dark:ring-white/10">
         
-        {/* Render Outage Blocks (Dark overlays) */}
+        {/* Render Outage Blocks (Dark overlays) - Z-10 */}
         {intervals.map((interval, idx) => {
           const left = getPercentage(interval.start);
           const width = getDurationPercentage(interval.start, interval.end);
@@ -28,7 +28,7 @@ const Timeline: React.FC<TimelineProps> = ({ intervals, isToday }) => {
           return (
             <div
               key={idx}
-              className="absolute top-0 h-full flex items-center justify-center group border-x transition-colors duration-300
+              className="absolute top-0 h-full flex items-center justify-center group border-x transition-colors duration-300 z-10
               bg-blue-grey-800/90 border-blue-grey-700/50
               dark:bg-[#1e293b] dark:border-gray-800/50"
               style={{ left: `${left}%`, width: `${width}%` }}
@@ -39,10 +39,10 @@ const Timeline: React.FC<TimelineProps> = ({ intervals, isToday }) => {
           );
         })}
 
-        {/* Current Time Indicator */}
+        {/* Current Time Indicator - Z-20 */}
         {isToday && (
           <div 
-            className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-10 shadow-[0_0_8px_rgba(239,68,68,0.8)]"
+            className="absolute top-0 bottom-0 w-0.5 bg-red-500 z-20 shadow-[0_0_8px_rgba(239,68,68,0.8)]"
             style={{ left: `${currentTimePct}%` }}
           >
             <div className="absolute -top-1 -left-[3px] w-2 h-2 bg-red-500 rounded-full shadow-[0_0_4px_rgba(239,68,68,1)]"></div>
