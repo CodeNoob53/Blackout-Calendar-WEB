@@ -72,7 +72,7 @@ const App: React.FC = () => {
 
       // 2. Start background fetch
       // If no cache, we might need to show a "Waking up" message if it takes too long
-      let wakeUpTimer: NodeJS.Timeout | null = null;
+      let wakeUpTimer: ReturnType<typeof setTimeout> | null = null;
       
       if (!cachedData) {
         wakeUpTimer = setTimeout(() => {
