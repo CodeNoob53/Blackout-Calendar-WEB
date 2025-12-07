@@ -1,39 +1,36 @@
 import React from 'react';
 import { Github } from 'lucide-react';
-import '../../styles/components/footer.css';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="footer">
-      {/* GitHub Links */}
-      <div className="footer__links">
+    <footer className="app-footer">
+      <div className="github-links">
         <a
           href="https://github.com/CodeNoob53/blackout_calendar"
           target="_blank"
           rel="noopener noreferrer"
-          className="footer__link"
+          className="github-btn"
         >
-          <Github className="footer__link-icon" />
-          <span className="footer__link-text">Blackout Calendar API</span>
+          <Github size={16} />
+          <span>Blackout Calendar API</span>
         </a>
 
         <a
           href="https://github.com/CodeNoob53/Blackout-Calendar-WEB"
           target="_blank"
           rel="noopener noreferrer"
-          className="footer__link"
+          className="github-btn"
         >
-          <Github className="footer__link-icon" />
-          <span className="footer__link-text">Blackout Calendar WEB</span>
+          <Github size={16} />
+          <span>Blackout Calendar WEB</span>
         </a>
       </div>
 
-      {/* Copyright info */}
-      <div className="footer__info">
-        <p className="footer__copyright">
+      <div style={{ opacity: 0.6 }}>
+        <p style={{ fontSize: '0.875rem', fontWeight: 500, margin: 0 }}>
           © {new Date().getFullYear()} Blackout Calendar.
         </p>
-        <p className="footer__disclaimer">
+        <p style={{ fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>
           Дані отримані з відкритих джерел
         </p>
       </div>

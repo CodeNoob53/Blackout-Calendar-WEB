@@ -1,6 +1,5 @@
 import React from 'react';
 import { Moon, Sun } from 'lucide-react';
-import '../../styles/components/theme-toggle.css';
 
 interface ThemeToggleProps {
   theme: 'light' | 'dark';
@@ -11,14 +10,16 @@ const ThemeToggle: React.FC<ThemeToggleProps> = ({ theme, toggleTheme }) => {
   return (
     <button
       onClick={toggleTheme}
-      className="theme-toggle"
+      className="icon-btn"
       aria-label="Toggle theme"
     >
-      {theme === 'dark' ? (
-        <Moon className="theme-toggle__icon" />
-      ) : (
-        <Sun className="theme-toggle__icon" />
-      )}
+      <div className="flex-center">
+        {theme === 'dark' ? (
+          <Moon size={20} fill="currentColor" />
+        ) : (
+          <Sun size={20} fill="currentColor" />
+        )}
+      </div>
     </button>
   );
 };

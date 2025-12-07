@@ -3,7 +3,6 @@ import { Zap, RefreshCw, WifiOff } from 'lucide-react';
 import NotificationCenter from '../notifications/NotificationCenter';
 import ThemeToggle from '../ui/ThemeToggle';
 import { QueueData, FetchStatus } from '../../types';
-import '../../styles/components/header.css';
 
 interface HeaderProps {
   status: FetchStatus;
@@ -24,17 +23,14 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const [showBanner, setShowBanner] = useState(false);
 
-  // Debounce the offline/cache banner to prevent flashing during normal navigation
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
 
     if (isUsingCache) {
-      // Wait 5 seconds before showing the banner
       timer = setTimeout(() => {
         setShowBanner(true);
       }, 5000);
     } else {
-      // If cache mode is turned off (server responded), hide immediately
       setShowBanner(false);
     }
 
@@ -42,35 +38,32 @@ const Header: React.FC<HeaderProps> = ({
   }, [isUsingCache]);
 
   return (
-    <header className="header">
-      <div className="header__container">
-        <div className="header__branding">
-          <div className="header__logo">
-            <Zap className="header__logo-icon" strokeWidth={2.5} fill="currentColor" />
+    <header className="app-header">
+      <div className="container header-content">
+        <div className="header-logo">
+          <div className="logo-icon-box">
+            <Zap size={24} strokeWidth={2.5} fill="currentColor" />
           </div>
-          <div>
-            <h1 className="header__title">
-              Світло <span className="header__title-accent">Є</span>?
+          <div className="header-title">
+            <h1>
+              Світло <span>Є</span>?
             </h1>
-            <p className="header__subtitle">
-              Графік відключень
-            </p>
+            <p>Графік відключень</p>
           </div>
         </div>
-
-        <div className="header__actions">
+        
+        <div className="header-controls flex-center" style={{ gap: '0.75rem' }}>
           {status === 'loading' && (
-            <RefreshCw className="header__loader" />
+            <RefreshCw size={16} className="spin-icon" style={{ color: 'var(--primary-color)' }} />
           )}
           <NotificationCenter currentQueueData={currentQueueData} isToday={isToday} />
           <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
         </div>
       </div>
-
-      {/* Connection Status Banner with delay */}
+      
       {showBanner && (
-         <div className="header__banner">
-            <WifiOff className="header__banner-icon" />
+         <div className="offline-banner">
+            <WifiOff size={12} />
             Сервер не відповідає. Показано збережену версію графіку.
          </div>
       )}

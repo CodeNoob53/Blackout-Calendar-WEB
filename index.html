@@ -1,57 +1,67 @@
 <!DOCTYPE html>
 <html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://blackout-calendar-122838488015.us-west1.run.app/" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <!-- Primary Meta Tags -->
+    <title>Світло Є? | Графік відключень світла</title>
+    <meta name="title" content="Світло Є? | Графік відключень світла">
+    <meta name="description" content="Зручний додаток для перегляду графіків відключення світла. Дізнайтесь свою чергу, отримуйте сповіщення про включення та виключення, переглядайте розклад офлайн.">
+    <meta name="keywords" content="світло, графік відключень, блекаут, дтек, укренерго, відключення електроенергії, черги світла, blackout calendar, розклад світла, коли буде світло">
+    <meta name="robots" content="index, follow">
+    <meta name="language" content="Ukrainian">
+    <meta name="author" content="Blackout Calendar">
 
-  <!-- Canonical URL -->
-  <link rel="canonical" href="https://blackout-calendar-122838488015.us-west1.run.app/" />
+    <!-- Open Graph / Facebook / Telegram -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://blackout-calendar-122838488015.us-west1.run.app/">
+    <meta property="og:title" content="Світло Є? | Графік відключень світла">
+    <meta property="og:description" content="Моніторинг графіків відключень. Сповіщення за 30 хв, перегляд черг та робота офлайн.">
+    <meta property="og:image" content="https://img.icons8.com/?size=512&id=TMhsmDzqlwEO&format=png&color=000000">
+    <meta property="og:site_name" content="Blackout Calendar">
+    <meta property="og:locale" content="uk_UA">
 
-  <!-- Primary Meta Tags -->
-  <title>Світло Є? | Графік відключень світла</title>
-  <meta name="title" content="Світло Є? | Графік відключень світла">
-  <meta name="description"
-    content="Зручний додаток для перегляду графіків відключення світла. Дізнайтесь свою чергу, отримуйте сповіщення про включення та виключення, переглядайте розклад офлайн.">
-  <meta name="keywords"
-    content="світло, графік відключень, блекаут, дтек, укренерго, відключення електроенергії, черги світла, blackout calendar, розклад світла, коли буде світло">
-  <meta name="robots" content="index, follow">
-  <meta name="language" content="Ukrainian">
-  <meta name="author" content="Blackout Calendar">
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary">
+    <meta property="twitter:url" content="https://blackout-calendar-122838488015.us-west1.run.app/">
+    <meta property="twitter:title" content="Світло Є? | Графік відключень світла">
+    <meta property="twitter:description" content="Моніторинг графіків відключень. Сповіщення за 30 хв, перегляд черг та робота офлайн.">
+    <meta property="twitter:image" content="https://img.icons8.com/?size=512&id=TMhsmDzqlwEO&format=png&color=000000">
 
-  <!-- Open Graph / Facebook / Telegram -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://blackout-calendar-122838488015.us-west1.run.app/">
-  <meta property="og:title" content="Світло Є? | Графік відключень світла">
-  <meta property="og:description"
-    content="Моніторинг графіків відключень. Сповіщення за 30 хв, перегляд черг та робота офлайн.">
-  <meta property="og:image" content="https://img.icons8.com/?size=512&id=TMhsmDzqlwEO&format=png&color=000000">
-  <meta property="og:site_name" content="Blackout Calendar">
-  <meta property="og:locale" content="uk_UA">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="https://img.icons8.com/?size=96&id=TMhsmDzqlwEO&format=png&color=000000">
+    <link rel="shortcut icon" href="https://img.icons8.com/?size=96&id=TMhsmDzqlwEO&format=png&color=000000">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/?size=192&id=TMhsmDzqlwEO&format=png&color=000000">
+    
+    <!-- PWA Settings -->
+    <link rel="manifest" href="./manifest.json" />
+    <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Світло Є?">
 
-  <!-- Twitter -->
-  <meta property="twitter:card" content="summary">
-  <meta property="twitter:url" content="https://blackout-calendar-122838488015.us-west1.run.app/">
-  <meta property="twitter:title" content="Світло Є? | Графік відключень світла">
-  <meta property="twitter:description"
-    content="Моніторинг графіків відключень. Сповіщення за 30 хв, перегляд черг та робота офлайн.">
-  <meta property="twitter:image" content="https://img.icons8.com/?size=512&id=TMhsmDzqlwEO&format=png&color=000000">
+    <!-- Tailwind CSS for components using utility classes -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              // Map Tailwind colors to CSS variables where possible or extend palette
+            }
+          }
+        }
+      }
+    </script>
 
-  <!-- Favicon -->
-  <link rel="icon" type="image/png" href="https://img.icons8.com/?size=96&id=TMhsmDzqlwEO&format=png&color=000000">
-  <link rel="shortcut icon" href="https://img.icons8.com/?size=96&id=TMhsmDzqlwEO&format=png&color=000000">
-  <link rel="apple-touch-icon" href="https://img.icons8.com/?size=192&id=TMhsmDzqlwEO&format=png&color=000000">
-
-  <!-- PWA Settings -->
-  <link rel="manifest" href="./manifest.json" />
-  <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)">
-  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Світло Є?">
-
-  <!-- Structured Data -->
-  <script type="application/ld+json">
+    <!-- Structured Data -->
+    <script type="application/ld+json">
       {
         "@context": "https://schema.org",
         "@type": "WebApplication",
@@ -63,42 +73,20 @@
         "offers": {
             "@type": "Offer",
             "price": "0",
-    }
-
-    #splash-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: #0f172a;
-      z-index: 9999;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: opacity 0.5s ease-out, visibility 0.5s;
-    }
-
-    .splash-icon {
-      width: 120px;
-      height: 120px;
-      animation: pulseCustom 2s ease-in-out infinite;
-    }
-
-    @keyframes pulseCustom {
-
-      0%,
-      100% {
-        transform: scale(1);
-        opacity: 1;
+            "priceCurrency": "UAH"
+        }
       }
+    </script>
 
-      50% {
-        transform: scale(0.95);
-        opacity: 0.8;
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      body {
+        margin: 0;
+        font-family: 'Inter', sans-serif;
+        overscroll-behavior-y: none;
+        background-color: #0f172a; /* Fallback */
       }
-    }
-  </style>
+    </style>
   <script type="importmap">
 {
   "imports": {
@@ -111,15 +99,7 @@
 }
 </script>
 </head>
-
-<body>
-  <!-- Splash Screen -->
-  <div id="splash-screen">
-    <img src="https://img.icons8.com/?size=192&id=TMhsmDzqlwEO&format=png&color=000000" alt="Blackout Calendar"
-      class="splash-icon">
-  </div>
-  <div id="root"></div>
-  <script type="module" src="/src/index.tsx"></script>
-</body>
-
+  <body>
+    <div id="root"></div>
+  </body>
 </html>

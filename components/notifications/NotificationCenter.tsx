@@ -4,7 +4,6 @@ import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSq
 import { NotificationSettings, NotificationItem, QueueData } from '../../types';
 import { fetchNewSchedules, fetchChangedSchedules } from '../../services/api';
 import { timeToMinutes } from '../../utils/timeHelper';
-import '../../styles/components/notification-center.css';
 
 interface NotificationCenterProps {
   currentQueueData?: QueueData;
@@ -22,7 +21,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'notifications' | 'settings'>('notifications');
   const [permission, setPermission] = useState<NotificationPermission>('default');
-
+  
   const [settings, setSettings] = useState<NotificationSettings>(() => {
     try {
       const saved = localStorage.getItem('notification_settings');
@@ -31,7 +30,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       return DEFAULT_SETTINGS;
     }
   });
-
+  
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
     try {
       const saved = localStorage.getItem('notifications_history');
@@ -40,10 +39,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       return [];
     }
   });
-
+  
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
-
+  
   const processedAlerts = useRef<Set<string>>(new Set());
   const processedUpdateIds = useRef<Set<string>>(
     (() => {
@@ -124,7 +123,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     }
   };
 
-  // Alert Logic
   useEffect(() => {
     if (!settings.lightAlerts || !currentQueueData || !isToday) return;
 
@@ -148,7 +146,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         if (timeUntilOff === 30 && !processedAlerts.current.has(offAlertId)) {
           const title = 'Світло зникне скоро';
           const msg = `Увага! Відключення заплановано на ${interval.start}.`;
-
+          
           addNotification({
             title: title,
             message: msg,
@@ -174,12 +172,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           processedAlerts.current.add(onAlertId);
         }
       });
-    }, 60000);
+    }, 60000); 
 
     return () => clearInterval(checkInterval);
   }, [settings.lightAlerts, settings.nightMode, currentQueueData, isToday]);
 
-  // Update Logic
   useEffect(() => {
     const checkForUpdates = async () => {
       if (settings.tomorrowSchedule) {
@@ -191,7 +188,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
               if (!processedUpdateIds.current.has(id)) {
                 const title = 'Новий графік';
                 const msg = item.pushMessage || `Доступний графік на ${item.date}`;
-
+                
                 addNotification({
                   title: title,
                   message: msg,
@@ -262,98 +259,90 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
   return (
     <>
-      <button
+      <button 
         ref={buttonRef}
         onClick={toggleOpen}
-        className="notification-button"
+        className="icon-btn"
       >
-        <Bell className="notification-button__icon" />
+        <Bell size={20} fill="currentColor" />
         {unreadCount > 0 && (
-          <span className="notification-button__badge">
-            <span className="notification-button__badge-ping"></span>
-            <span className="notification-button__badge-dot"></span>
+          <span className="badge-dot">
+            <span className="badge-ping"></span>
+            <span className="badge-solid"></span>
           </span>
         )}
       </button>
 
       {isOpen && createPortal(
         <>
-          <div
-            className="notification-backdrop"
-            onClick={() => setIsOpen(false)}
-          />
-
-          <div
-            className="notification-modal"
+          <div className="modal-backdrop" onClick={() => setIsOpen(false)} />
+          
+          <div 
+            className="modal-content"
             style={{
                top: window.innerWidth >= 640 ? position.top : 'auto',
                right: window.innerWidth >= 640 ? position.right : 0,
             }}
           >
-            <div className="notification-modal__header">
-               <div className="notification-modal__tabs">
-                  <button
+            
+            <div className="modal-header">
+               <div style={{ display: 'flex' }}>
+                  <button 
                     onClick={() => setActiveTab('notifications')}
-                    className={`notification-modal__tab ${activeTab === 'notifications' ? 'notification-modal__tab--active' : ''}`}
+                    className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
                   >
                     Сповіщення ({unreadCount})
                   </button>
-                  <button
+                  <button 
                      onClick={() => setActiveTab('settings')}
-                     className={`notification-modal__tab ${activeTab === 'settings' ? 'notification-modal__tab--active' : ''}`}
+                     className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
                   >
                      Налаштування
                   </button>
                </div>
-               <button
-                 onClick={() => setIsOpen(false)}
-                 className="notification-modal__close"
-               >
-                  <X className="notification-modal__close-icon" />
+               <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                  <X size={20} />
                </button>
             </div>
 
-            <div className="notification-modal__content">
+            <div className="modal-body">
               {activeTab === 'notifications' ? (
-                <div className="notifications-tab">
-                  <div className="notifications-tab__actions">
-                    <button onClick={markAllRead} className="notifications-tab__action">
-                      <Check className="notifications-tab__action-icon" /> Позначити прочитаним
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '0.75rem', paddingRight: '0.25rem' }}>
+                    <button onClick={markAllRead} style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <Check size={12} style={{ marginRight: '4px' }} /> Позначити прочитаним
                     </button>
-                    <button onClick={clearHistory} className="notifications-tab__action notifications-tab__action--delete">
-                      <Trash2 className="notifications-tab__action-icon" /> Очистити
+                    <button onClick={clearHistory} style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
+                      <Trash2 size={12} style={{ marginRight: '4px' }} /> Очистити
                     </button>
                   </div>
-
+                  
                   {notifications.length === 0 ? (
-                    <div className="notifications-empty">
-                      <Bell className="notifications-empty__icon" />
-                      <p className="notifications-empty__text">Сповіщень поки немає</p>
+                    <div style={{ padding: '4rem 0', textAlign: 'center', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <Bell size={40} style={{ opacity: 0.3, marginBottom: '0.75rem' }} />
+                      <p style={{ fontSize: '0.875rem' }}>Сповіщень поки немає</p>
                     </div>
                   ) : (
-                    <div className="notifications-list">
+                    <div>
                       {notifications.map((n) => (
-                        <div
-                          key={n.id}
-                          className={`notification-item notification-item--${n.type}`}
-                        >
-                          <div className="notification-item__content">
-                             <div className={`notification-item__icon-wrapper notification-item__icon-wrapper--${n.type}`}>
-                               {n.type === 'info' ? <Calendar className="notification-item__icon" /> :
-                                n.type === 'warning' ? <AlertTriangle className="notification-item__icon" /> :
-                                <CheckCircle className="notification-item__icon" />}
+                        <div key={n.id} className={`notification-item ${n.type === 'warning' ? 'notif-warning' : n.type === 'info' ? 'notif-info' : 'notif-success'}`}>
+                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+                             <div style={{ marginTop: '0.125rem' }}>
+                               {n.type === 'info' ? <Calendar size={14} /> :
+                                n.type === 'warning' ? <AlertTriangle size={14} /> :
+                                <CheckCircle size={14} />}
                              </div>
 
-                             <div className="notification-item__body">
-                                <h4 className="notification-item__title">{n.title}</h4>
-                                <p className="notification-item__message">{n.message}</p>
-                                <span className="notification-item__time">
+                             <div style={{ flex: 1, minWidth: 0 }}>
+                                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.25rem', lineHeight: 1.2 }}>{n.title}</h4>
+                                <p style={{ fontSize: '0.75rem', lineHeight: 1.4, wordBreak: 'break-word' }}>{n.message}</p>
+                                <span style={{ fontSize: '10px', fontFamily: 'monospace', marginTop: '0.5rem', display: 'block', color: 'var(--text-muted)' }}>
                                   {new Date(n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                 </span>
                              </div>
 
                              {!n.read && (
-                               <div className="notification-item__unread-dot" />
+                               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', flexShrink: 0, marginTop: '0.375rem' }} />
                              )}
                           </div>
                         </div>
@@ -362,19 +351,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   )}
                 </div>
               ) : (
-                <div className="settings-tab">
+                <div>
                   {permission === 'default' && (
-                    <div className="permission-banner permission-banner--request">
-                       <h4 className="permission-banner__title">
-                         <MessageSquare className="permission-banner__title-icon" />
+                    <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
+                       <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                         <MessageSquare size={16} />
                          Системні сповіщення
                        </h4>
-                       <p className="permission-banner__text">
-                         Дозвольте надсилати сповіщення, щоб не пропустити відключення, коли сайт згорнуто.
+                       <p style={{ fontSize: '0.75rem', marginBottom: '0.75rem', opacity: 0.8 }}>
+                         Дозвольте надсилати сповіщення, щоб не пропустити відключення.
                        </p>
-                       <button
+                       <button 
                          onClick={requestPermission}
-                         className="permission-banner__button"
+                         style={{ width: '100%', padding: '0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
                        >
                          Увімкнути
                        </button>
@@ -382,53 +371,55 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   )}
 
                   {permission === 'denied' && (
-                     <div className="permission-banner permission-banner--denied">
-                       <p className="permission-banner__text permission-banner__text--denied">
-                         Сповіщення заблоковано в налаштуваннях браузера. Увімкніть їх вручну, щоб отримувати нагадування.
+                     <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                       <p style={{ fontSize: '0.75rem', color: 'var(--danger-text)' }}>
+                         Сповіщення заблоковано в налаштуваннях браузера.
                        </p>
                     </div>
                   )}
 
-                  <div className="settings-list">
+                  <div style={{ borderRadius: '0.75rem', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
+                    
                     {[
-                      {
-                        id: 'lightAlerts',
-                        label: 'Сповіщення про світло',
+                      { 
+                        id: 'lightAlerts', 
+                        label: 'Сповіщення про світло', 
                         sub: 'За 30 хв до події',
-                        val: settings.lightAlerts
+                        val: settings.lightAlerts 
                       },
-                      {
-                        id: 'nightMode',
-                        label: 'Не турбувати вночі',
+                      { 
+                        id: 'nightMode', 
+                        label: 'Не турбувати вночі', 
                         sub: 'Тиша з 22:00 до 08:00',
-                        val: settings.nightMode
+                        val: settings.nightMode 
                       },
-                      {
-                        id: 'scheduleUpdates',
-                        label: 'Зміни графіку',
+                      { 
+                        id: 'scheduleUpdates', 
+                        label: 'Зміни графіку', 
                         sub: 'Оновлення даних',
-                        val: settings.scheduleUpdates
+                        val: settings.scheduleUpdates 
                       },
-                      {
-                        id: 'tomorrowSchedule',
-                        label: 'Графік на завтра',
+                      { 
+                        id: 'tomorrowSchedule', 
+                        label: 'Графік на завтра', 
                         sub: 'Нові публікації',
-                        val: settings.tomorrowSchedule
+                        val: settings.tomorrowSchedule 
                       }
                     ].map((item) => (
-                      <div key={item.id} className="settings-list__item">
-                        <div className="settings-list__item-content">
-                          <h4 className="settings-list__item-label">{item.label}</h4>
-                          <p className="settings-list__item-sublabel">{item.sub}</p>
+                      <div key={item.id} className="setting-row">
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '2px' }}>{item.label}</h4>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.sub}</p>
                         </div>
-                        <button
+                        <button 
                           onClick={() => setSettings(s => ({ ...s, [item.id]: !item.val }))}
-                          className={`toggle-switch ${item.val ? 'toggle-switch--on' : ''}`}
+                          className={`toggle-switch ${item.val ? 'on' : ''}`}
                         >
-                          <div className="toggle-switch__handle" />
+                          <div className="toggle-thumb" />
                         </button>
                       </div>
                     ))}
+                    
                   </div>
                 </div>
               )}

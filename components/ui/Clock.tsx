@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import '../../styles/components/clock.css';
 
 const Clock: React.FC = () => {
   const [time, setTime] = useState(new Date());
@@ -13,13 +12,13 @@ const Clock: React.FC = () => {
   const minutes = time.getMinutes().toString().padStart(2, '0');
 
   return (
-    <div className="clock">
-      <span className="clock__label">
+    <div className="clock-container">
+      <span className="clock-label">
         Зараз
       </span>
-      <div className="clock__time">
+      <div className="clock-time">
         <span>{hours}</span>
-        <span className="clock__separator">:</span>
+        <span className="blink-colon">:</span>
         <span>{minutes}</span>
       </div>
     </div>

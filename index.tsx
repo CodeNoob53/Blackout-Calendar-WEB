@@ -1,9 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import './styles/base/reset.css';
-import './styles/base/variables.css';
-import './styles/layout/main.css';
+import './styles.css';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -29,15 +27,3 @@ root.render(
     <App />
   </React.StrictMode>
 );
-
-// Remove splash screen after app mount
-const splash = document.getElementById('splash-screen');
-if (splash) {
-  // Small delay to ensure React has painted
-  setTimeout(() => {
-    splash.style.opacity = '0';
-    setTimeout(() => {
-      splash.remove();
-    }, 500); // Match CSS transition duration
-  }, 500); // Minimum visibility time
-}

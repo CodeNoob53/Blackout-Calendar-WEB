@@ -10,13 +10,21 @@ export const CACHE_KEYS = {
 // Helper to handle slow server wake-ups (Render free tier)
 const fetchWithTimeout = async (url: string, timeout = 15000): Promise<Response> => {
   const controller = new AbortController();
-  const id = setTimeout(() => controller.abort(), timeout);
+  const id = setTimeout(() => {
+    // Providing a reason is crucial to prevent "signal is aborted without reason" error
+    controller.abort(new Error('Request timed out'));
+  }, timeout);
+
   try {
     const response = await fetch(url, { signal: controller.signal });
     clearTimeout(id);
     return response;
-  } catch (error) {
+  } catch (error: any) {
     clearTimeout(id);
+    // Handle AbortError specifically or check if signal was aborted with our reason
+    if (error.name === 'AbortError' || (controller.signal.aborted && controller.signal.reason?.message === 'Request timed out')) {
+      throw new Error(`Request timed out after ${timeout}ms`);
+    }
     throw error;
   }
 };
