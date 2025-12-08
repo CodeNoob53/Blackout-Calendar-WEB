@@ -22,6 +22,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   nightMode: true,
   scheduleUpdates: true,
   tomorrowSchedule: true,
+  silentMode: false,
 };
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueData, isToday }) => {
@@ -39,7 +40,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       return DEFAULT_SETTINGS;
     }
   });
-  
+
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
     try {
       const saved = localStorage.getItem('notifications_history');
@@ -48,10 +49,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       return [];
     }
   });
-  
+
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
-  
+
   const processedAlerts = useRef<Set<string>>(new Set());
   const processedUpdateIds = useRef<Set<string>>(
     (() => {
@@ -64,11 +65,41 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     })()
   );
 
+  const addNotification = (input: Omit<NotificationItem, 'id' | 'date' | 'read'>) => {
+    const newItem: NotificationItem = {
+      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+      date: Date.now(),
+      read: false,
+      ...input
+    };
+    setNotifications(prev => [newItem, ...prev]);
+  };
+
   useEffect(() => {
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }
     checkPushSubscription();
+
+    // Слухати повідомлення від Service Worker
+    if ('serviceWorker' in navigator) {
+      const messageHandler = (event: MessageEvent) => {
+        if (event.data && event.data.type === 'PUSH_NOTIFICATION') {
+          const { notification } = event.data;
+          addNotification({
+            title: notification.title,
+            message: notification.message,
+            type: notification.type as 'info' | 'warning' | 'success'
+          });
+        }
+      };
+
+      navigator.serviceWorker.addEventListener('message', messageHandler);
+
+      return () => {
+        navigator.serviceWorker.removeEventListener('message', messageHandler);
+      };
+    }
   }, []);
 
   const checkPushSubscription = async () => {
@@ -103,6 +134,38 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
   useEffect(() => {
     localStorage.setItem('notification_settings', JSON.stringify(settings));
+
+    // Зберегти silentMode в IndexedDB для Service Worker
+    const saveSilentMode = async () => {
+      try {
+        const db = await new Promise<IDBDatabase>((resolve, reject) => {
+          const request = indexedDB.open('NotificationSettings', 1);
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve(request.result);
+          request.onupgradeneeded = (event: any) => {
+            const db = event.target.result;
+            if (!db.objectStoreNames.contains('settings')) {
+              db.createObjectStore('settings');
+            }
+          };
+        });
+
+        const tx = db.transaction('settings', 'readwrite');
+        const store = tx.objectStore('settings');
+        store.put(settings.silentMode, 'silentMode');
+
+        await new Promise<void>((resolve, reject) => {
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error);
+        });
+
+        db.close();
+      } catch (error) {
+        console.error('Failed to save silent mode to IndexedDB:', error);
+      }
+    };
+
+    saveSilentMode();
   }, [settings]);
 
   useEffect(() => {
@@ -145,7 +208,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey)
+        applicationServerKey: urlBase64ToUint8Array(publicKey) as any
       });
 
       await subscribeToPushNotifications(subscription);
@@ -196,7 +259,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     if (Notification.permission === 'granted') {
       try {
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-           new Notification(title, {
+          new Notification(title, {
             body,
             icon: 'https://img.icons8.com/?size=192&id=TMhsmDzqlwEO&format=png&color=000000',
             vibrate: [200, 100, 200]
@@ -236,7 +299,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         if (timeUntilOff === 30 && !processedAlerts.current.has(offAlertId)) {
           const title = 'Світло зникне скоро';
           const msg = `Увага! Відключення заплановано на ${interval.start}.`;
-          
+
           addNotification({
             title: title,
             message: msg,
@@ -262,7 +325,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           processedAlerts.current.add(onAlertId);
         }
       });
-    }, 60000); 
+    }, 60000);
 
     return () => clearInterval(checkInterval);
   }, [settings.lightAlerts, settings.nightMode, currentQueueData, isToday]);
@@ -339,16 +402,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     return () => clearInterval(pollInterval);
   }, [settings.tomorrowSchedule, settings.scheduleUpdates]);
 
-  const addNotification = (input: Omit<NotificationItem, 'id' | 'date' | 'read'>) => {
-    const newItem: NotificationItem = {
-      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-      date: Date.now(),
-      read: false,
-      ...input
-    };
-    setNotifications(prev => [newItem, ...prev]);
-  };
-
   const markAllRead = () => {
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
@@ -361,7 +414,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
   return (
     <>
-      <button 
+      <button
         ref={buttonRef}
         onClick={toggleOpen}
         className="icon-btn"
@@ -378,33 +431,33 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       {isOpen && createPortal(
         <>
           <div className="modal-backdrop" onClick={() => setIsOpen(false)} />
-          
-          <div 
+
+          <div
             className="modal-content"
             style={{
-               top: window.innerWidth >= 640 ? position.top : 'auto',
-               right: window.innerWidth >= 640 ? position.right : 0,
+              top: window.innerWidth >= 640 ? position.top : 'auto',
+              right: window.innerWidth >= 640 ? position.right : 0,
             }}
           >
-            
+
             <div className="modal-header">
-               <div style={{ display: 'flex' }}>
-                  <button 
-                    onClick={() => setActiveTab('notifications')}
-                    className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
-                  >
-                    Сповіщення ({unreadCount})
-                  </button>
-                  <button 
-                     onClick={() => setActiveTab('settings')}
-                     className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-                  >
-                     Налаштування
-                  </button>
-               </div>
-               <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-                  <X size={20} />
-               </button>
+              <div style={{ display: 'flex' }}>
+                <button
+                  onClick={() => setActiveTab('notifications')}
+                  className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
+                >
+                  Сповіщення ({unreadCount})
+                </button>
+                <button
+                  onClick={() => setActiveTab('settings')}
+                  className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+                >
+                  Налаштування
+                </button>
+              </div>
+              <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+                <X size={20} />
+              </button>
             </div>
 
             <div className="modal-body">
@@ -418,7 +471,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                       <Trash2 size={12} style={{ marginRight: '4px' }} /> Очистити
                     </button>
                   </div>
-                  
+
                   {notifications.length === 0 ? (
                     <div style={{ padding: '4rem 0', textAlign: 'center', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                       <Bell size={40} style={{ opacity: 0.3, marginBottom: '0.75rem' }} />
@@ -429,23 +482,23 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                       {notifications.map((n) => (
                         <div key={n.id} className={`notification-item ${n.type === 'warning' ? 'notif-warning' : n.type === 'info' ? 'notif-info' : 'notif-success'}`}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                             <div style={{ marginTop: '0.125rem' }}>
-                               {n.type === 'info' ? <Calendar size={14} /> :
+                            <div style={{ marginTop: '0.125rem' }}>
+                              {n.type === 'info' ? <Calendar size={14} /> :
                                 n.type === 'warning' ? <AlertTriangle size={14} /> :
-                                <CheckCircle size={14} />}
-                             </div>
+                                  <CheckCircle size={14} />}
+                            </div>
 
-                             <div style={{ flex: 1, minWidth: 0 }}>
-                                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.25rem', lineHeight: 1.2 }}>{n.title}</h4>
-                                <p style={{ fontSize: '0.75rem', lineHeight: 1.4, wordBreak: 'break-word' }}>{n.message}</p>
-                                <span style={{ fontSize: '10px', fontFamily: 'monospace', marginTop: '0.5rem', display: 'block', color: 'var(--text-muted)' }}>
-                                  {new Date(n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                </span>
-                             </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.25rem', lineHeight: 1.2 }}>{n.title}</h4>
+                              <p style={{ fontSize: '0.75rem', lineHeight: 1.4, wordBreak: 'break-word' }}>{n.message}</p>
+                              <span style={{ fontSize: '10px', fontFamily: 'monospace', marginTop: '0.5rem', display: 'block', color: 'var(--text-muted)' }}>
+                                {new Date(n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
 
-                             {!n.read && (
-                               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', flexShrink: 0, marginTop: '0.375rem' }} />
-                             )}
+                            {!n.read && (
+                              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', flexShrink: 0, marginTop: '0.375rem' }} />
+                            )}
                           </div>
                         </div>
                       ))}
@@ -456,27 +509,27 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 <div>
                   {permission === 'default' && (
                     <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                       <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                         <MessageSquare size={16} />
-                         Системні сповіщення
-                       </h4>
-                       <p style={{ fontSize: '0.75rem', marginBottom: '0.75rem', opacity: 0.8 }}>
-                         Дозвольте надсилати сповіщення, щоб не пропустити відключення.
-                       </p>
-                       <button 
-                         onClick={requestPermission}
-                         style={{ width: '100%', padding: '0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
-                       >
-                         Увімкнути
-                       </button>
+                      <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <MessageSquare size={16} />
+                        Системні сповіщення
+                      </h4>
+                      <p style={{ fontSize: '0.75rem', marginBottom: '0.75rem', opacity: 0.8 }}>
+                        Дозвольте надсилати сповіщення, щоб не пропустити відключення.
+                      </p>
+                      <button
+                        onClick={requestPermission}
+                        style={{ width: '100%', padding: '0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
+                      >
+                        Увімкнути
+                      </button>
                     </div>
                   )}
 
                   {permission === 'denied' && (
-                     <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                       <p style={{ fontSize: '0.75rem', color: 'var(--danger-text)' }}>
-                         Сповіщення заблоковано в налаштуваннях браузера.
-                       </p>
+                    <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--danger-text)' }}>
+                        Сповіщення заблоковано в налаштуваннях браузера.
+                      </p>
                     </div>
                   )}
 
@@ -512,31 +565,37 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   )}
 
                   <div style={{ borderRadius: '0.75rem', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
-                    
+
                     {[
-                      { 
-                        id: 'lightAlerts', 
-                        label: 'Сповіщення про світло', 
+                      {
+                        id: 'silentMode',
+                        label: 'Тихий режим',
+                        sub: 'Без системних сповіщень, тільки в панелі',
+                        val: settings.silentMode
+                      },
+                      {
+                        id: 'lightAlerts',
+                        label: 'Сповіщення про світло',
                         sub: 'За 30 хв до події',
-                        val: settings.lightAlerts 
+                        val: settings.lightAlerts
                       },
-                      { 
-                        id: 'nightMode', 
-                        label: 'Не турбувати вночі', 
+                      {
+                        id: 'nightMode',
+                        label: 'Не турбувати вночі',
                         sub: 'Тиша з 22:00 до 08:00',
-                        val: settings.nightMode 
+                        val: settings.nightMode
                       },
-                      { 
-                        id: 'scheduleUpdates', 
-                        label: 'Зміни графіку', 
+                      {
+                        id: 'scheduleUpdates',
+                        label: 'Зміни графіку',
                         sub: 'Оновлення даних',
-                        val: settings.scheduleUpdates 
+                        val: settings.scheduleUpdates
                       },
-                      { 
-                        id: 'tomorrowSchedule', 
-                        label: 'Графік на завтра', 
+                      {
+                        id: 'tomorrowSchedule',
+                        label: 'Графік на завтра',
                         sub: 'Нові публікації',
-                        val: settings.tomorrowSchedule 
+                        val: settings.tomorrowSchedule
                       }
                     ].map((item) => (
                       <div key={item.id} className="setting-row">
@@ -544,7 +603,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                           <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '2px' }}>{item.label}</h4>
                           <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.sub}</p>
                         </div>
-                        <button 
+                        <button
                           onClick={() => setSettings(s => ({ ...s, [item.id]: !item.val }))}
                           className={`toggle-switch ${item.val ? 'on' : ''}`}
                         >
@@ -552,7 +611,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                         </button>
                       </div>
                     ))}
-                    
+
                   </div>
                 </div>
               )}

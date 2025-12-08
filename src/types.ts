@@ -53,6 +53,7 @@ export interface NotificationSettings {
   nightMode: boolean;       // No alerts 22:00 - 08:00
   scheduleUpdates: boolean; // Alert when schedule changes
   tomorrowSchedule: boolean;// Alert when tomorrow's schedule is available
+  silentMode: boolean;      // No system notifications, only in-app (when browser open)
 }
 
 export interface NotificationItem {

@@ -60,6 +60,37 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Helper to get silent mode from IndexedDB
+async function getSilentMode() {
+  try {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('NotificationSettings', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('settings')) {
+          db.createObjectStore('settings');
+        }
+      };
+    });
+
+    const tx = db.transaction('settings', 'readonly');
+    const store = tx.objectStore('settings');
+    const silentMode = await new Promise((resolve) => {
+      const request = store.get('silentMode');
+      request.onsuccess = () => resolve(request.result || false);
+      request.onerror = () => resolve(false);
+    });
+
+    db.close();
+    return silentMode;
+  } catch (e) {
+    console.error('Failed to get silent mode:', e);
+    return false;
+  }
+}
+
 // Push event - Handle incoming push notifications
 self.addEventListener('push', (event) => {
   let data = {
@@ -77,18 +108,38 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const options = {
-    body: data.body,
-    icon: data.icon || 'https://img.icons8.com/?size=192&id=TMhsmDzqlwEO&format=png&color=000000',
-    badge: 'https://img.icons8.com/?size=96&id=TMhsmDzqlwEO&format=png&color=000000',
-    vibrate: [200, 100, 200],
-    data: data.data,
-    requireInteraction: false,
-    tag: data.data?.type || 'default'
-  };
-
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    (async () => {
+      const silentMode = await getSilentMode();
+
+      // Завжди надсилати повідомлення до UI
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      clients.forEach((client) => {
+        client.postMessage({
+          type: 'PUSH_NOTIFICATION',
+          notification: {
+            title: data.title,
+            message: data.body,
+            type: data.data?.type || 'info'
+          }
+        });
+      });
+
+      // Показати системне сповіщення ТІЛЬКИ якщо НЕ silent mode
+      if (!silentMode) {
+        const options = {
+          body: data.body,
+          icon: data.icon || 'https://img.icons8.com/?size=192&id=TMhsmDzqlwEO&format=png&color=000000',
+          badge: 'https://img.icons8.com/?size=96&id=TMhsmDzqlwEO&format=png&color=000000',
+          vibrate: [200, 100, 200],
+          data: data.data,
+          requireInteraction: false,
+          tag: `${data.data?.type || 'notification'}-${Date.now()}`
+        };
+
+        await self.registration.showNotification(data.title, options);
+      }
+    })()
   );
 });
 
