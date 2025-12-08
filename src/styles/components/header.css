@@ -1,0 +1,65 @@
+/* Header */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-header);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background-color 0.3s ease;
+  margin-bottom: 2rem;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem;
+}
+
+.header-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.logo-icon-box {
+  padding: 0.5rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
+  box-shadow: 0 4px 6px -1px var(--accent-glow);
+  color: white;
+}
+
+.header-title h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+  margin: 0;
+}
+
+.header-title span {
+  color: var(--primary-color);
+}
+
+.header-title p {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin: 0;
+  letter-spacing: 0.025em;
+}
+
+.offline-banner {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 0.75rem;
+  padding: 0.25rem 1rem;
+  text-align: center;
+  border-bottom: 1px solid var(--warning-text);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}

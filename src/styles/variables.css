@@ -1,0 +1,87 @@
+/* Theme Variables - Light & Dark Mode */
+
+:root {
+  /* Light Theme Variables */
+  --bg-main: linear-gradient(135deg, #DCEDC8, #F1F8E9, #FFFFFF);
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-header: rgba(255, 255, 255, 0.7);
+
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+
+  --primary-color: #8BC34A; /* Nature 500 */
+  --primary-dark: #689F38;
+  --primary-light: #C5E1A5;
+
+  --accent-color: #8BC34A;
+  --accent-glow: rgba(139, 195, 74, 0.3);
+
+  --border-color: rgba(255, 255, 255, 0.4);
+  --border-subtle: #e2e8f0;
+
+  --shadow-color: rgba(51, 105, 30, 0.1);
+  --shadow-card: 0 10px 30px -10px var(--shadow-color);
+
+  --success-bg: #DCEDC8;
+  --success-text: #33691e;
+
+  --warning-bg: #FEF3C7;
+  --warning-text: #B45309;
+
+  --danger-bg: #FEE2E2;
+  --danger-text: #B91C1C;
+
+  --toggle-bg: #e2e8f0;
+  --active-indicator: #0f172a;
+
+  --timeline-track: linear-gradient(90deg, #8BC34A, #9CCC65, #8BC34A);
+  --timeline-block-bg: rgba(55, 71, 79, 0.9);
+  --timeline-border: rgba(55, 71, 79, 0.5);
+
+  --queue-active-bg: #8BC34A;
+  --queue-active-text: #ffffff;
+}
+
+.dark {
+  /* Dark Theme Variables */
+  --bg-main: radial-gradient(ellipse at top, #1e293b, #0f172a, #000000);
+  --bg-card: rgba(31, 41, 59, 0.4);
+  --bg-header: rgba(15, 23, 42, 0.8);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+
+  --primary-color: #f59e0b; /* Amber 500 */
+  --primary-dark: #d97706;
+  --primary-light: #fbbf24;
+
+  --accent-color: #f59e0b;
+  --accent-glow: rgba(245, 158, 11, 0.2);
+
+  --border-color: rgba(255, 255, 255, 0.05);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+
+  --shadow-color: rgba(0, 0, 0, 0.5);
+  --shadow-card: 0 10px 30px -10px var(--shadow-color);
+
+  --success-bg: rgba(74, 222, 128, 0.1);
+  --success-text: #4ade80;
+
+  --warning-bg: rgba(251, 191, 36, 0.1);
+  --warning-text: #fbbf24;
+
+  --danger-bg: rgba(248, 113, 113, 0.1);
+  --danger-text: #f87171;
+
+  --toggle-bg: #374151;
+  --active-indicator: #ffffff;
+
+  --timeline-track: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
+  --timeline-block-bg: #1e293b;
+  --timeline-border: rgba(31, 41, 59, 0.5);
+
+  --queue-active-bg: #f59e0b;
+  --queue-active-text: #0f172a;
+}

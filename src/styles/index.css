@@ -1,0 +1,17 @@
+/* Main Styles Entry Point */
+
+/* Theme variables (light & dark) */
+@import './variables.css';
+
+/* Base reset & utility classes */
+@import './base.css';
+
+/* Component styles */
+@import './components/header.css';
+@import './components/clock.css';
+@import './components/queue.css';
+@import './components/visualization.css';
+@import './components/timeline.css';
+@import './components/buttons.css';
+@import './components/modal.css';
+@import './components/footer.css';
