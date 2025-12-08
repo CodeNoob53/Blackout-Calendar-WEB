@@ -2,7 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSquare } from 'lucide-react';
 import { NotificationSettings, NotificationItem, QueueData } from '../../types';
-import { fetchNewSchedules, fetchChangedSchedules } from '../../services/api';
+import {
+  fetchNewSchedules,
+  fetchChangedSchedules,
+  getVapidPublicKey,
+  subscribeToPushNotifications,
+  unsubscribeFromPushNotifications,
+  updateNotificationQueue
+} from '../../services/api';
 import { timeToMinutes } from '../../utils/timeHelper';
 
 interface NotificationCenterProps {
@@ -21,7 +28,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'notifications' | 'settings'>('notifications');
   const [permission, setPermission] = useState<NotificationPermission>('default');
-  
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
+  const [pushSubscription, setPushSubscription] = useState<PushSubscription | null>(null);
+
   const [settings, setSettings] = useState<NotificationSettings>(() => {
     try {
       const saved = localStorage.getItem('notification_settings');
@@ -59,7 +68,27 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     if ('Notification' in window) {
       setPermission(Notification.permission);
     }
+    checkPushSubscription();
   }, []);
+
+  const checkPushSubscription = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.log('Push notifications not supported');
+      return;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+
+      if (subscription) {
+        setPushSubscription(subscription);
+        setIsPushEnabled(true);
+      }
+    } catch (error) {
+      console.error('Failed to check push subscription:', error);
+    }
+  };
 
   const toggleOpen = () => {
     if (!isOpen && buttonRef.current) {
@@ -95,11 +124,72 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       const result = await Notification.requestPermission();
       setPermission(result);
       if (result === 'granted') {
+        await subscribeToPush();
         sendSystemNotification('Сповіщення увімкнено!', 'Тепер ви будете отримувати важливі нагадування.');
       }
     } catch (e) {
       console.error(e);
     }
+  };
+
+  const subscribeToPush = async () => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.log('Push notifications not supported');
+      return;
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.ready;
+
+      const publicKey = await getVapidPublicKey();
+
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey)
+      });
+
+      await subscribeToPushNotifications(subscription);
+
+      setPushSubscription(subscription);
+      setIsPushEnabled(true);
+
+      const notificationTypes = ['all'];
+      if (subscription.endpoint && currentQueueData) {
+        await updateNotificationQueue(subscription.endpoint, currentQueueData.queue, notificationTypes);
+      }
+
+      console.log('Successfully subscribed to push notifications');
+    } catch (error) {
+      console.error('Failed to subscribe to push notifications:', error);
+      setIsPushEnabled(false);
+    }
+  };
+
+  const unsubscribeToPush = async () => {
+    if (!pushSubscription) return;
+
+    try {
+      await pushSubscription.unsubscribe();
+      await unsubscribeFromPushNotifications(pushSubscription.endpoint);
+
+      setPushSubscription(null);
+      setIsPushEnabled(false);
+
+      console.log('Successfully unsubscribed from push notifications');
+    } catch (error) {
+      console.error('Failed to unsubscribe from push notifications:', error);
+    }
+  };
+
+  const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
   };
 
   const sendSystemNotification = (title: string, body: string) => {
@@ -178,6 +268,18 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   }, [settings.lightAlerts, settings.nightMode, currentQueueData, isToday]);
 
   useEffect(() => {
+    if (pushSubscription && currentQueueData) {
+      updateNotificationQueue(
+        pushSubscription.endpoint,
+        currentQueueData.queue,
+        ['all']
+      ).catch(error => {
+        console.error('Failed to update queue on backend:', error);
+      });
+    }
+  }, [currentQueueData, pushSubscription]);
+
+  useEffect(() => {
     const checkForUpdates = async () => {
       if (settings.tomorrowSchedule) {
         try {
@@ -188,7 +290,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
               if (!processedUpdateIds.current.has(id)) {
                 const title = 'Новий графік';
                 const msg = item.pushMessage || `Доступний графік на ${item.date}`;
-                
+
                 addNotification({
                   title: title,
                   message: msg,
@@ -375,6 +477,37 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                        <p style={{ fontSize: '0.75rem', color: 'var(--danger-text)' }}>
                          Сповіщення заблоковано в налаштуваннях браузера.
                        </p>
+                    </div>
+                  )}
+
+                  {permission === 'granted' && (
+                    <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                          <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <CheckCircle size={16} />
+                            Веб-пуш {isPushEnabled ? 'увімкнено' : 'вимкнено'}
+                          </h4>
+                          <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>
+                            {isPushEnabled ? 'Сповіщення надходять навіть коли сайт закритий' : 'Натисніть кнопку для активації'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={isPushEnabled ? unsubscribeToPush : subscribeToPush}
+                          style={{
+                            padding: '0.5rem 1rem',
+                            background: isPushEnabled ? '#ef4444' : '#22c55e',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '0.5rem',
+                            fontWeight: 700,
+                            fontSize: '0.75rem',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {isPushEnabled ? 'Вимкнути' : 'Увімкнути'}
+                        </button>
+                      </div>
                     </div>
                   )}
 

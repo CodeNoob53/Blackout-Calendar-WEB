@@ -107,3 +107,52 @@ export const fetchChangedSchedules = async (hours = 24): Promise<ChangedSchedule
   if (!response.ok) throw new Error('Failed to fetch changed schedules');
   return response.json();
 };
+
+// --- Push Notifications API ---
+
+export const getVapidPublicKey = async (): Promise<string> => {
+  const response = await fetchWithTimeout(`${BASE_URL}/notifications/vapid-key`);
+  if (!response.ok) throw new Error('Failed to fetch VAPID key');
+  const data = await response.json();
+  return data.publicKey;
+};
+
+export const subscribeToPushNotifications = async (subscription: PushSubscription): Promise<boolean> => {
+  const response = await fetch(`${BASE_URL}/notifications/subscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(subscription.toJSON())
+  });
+
+  if (!response.ok) throw new Error('Failed to subscribe to push notifications');
+  const data = await response.json();
+  return data.success;
+};
+
+export const unsubscribeFromPushNotifications = async (endpoint: string): Promise<boolean> => {
+  const response = await fetch(`${BASE_URL}/notifications/unsubscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint })
+  });
+
+  if (!response.ok) throw new Error('Failed to unsubscribe from push notifications');
+  const data = await response.json();
+  return data.success;
+};
+
+export const updateNotificationQueue = async (
+  endpoint: string,
+  queue: string | null,
+  notificationTypes?: string[]
+): Promise<boolean> => {
+  const response = await fetch(`${BASE_URL}/notifications/update-queue`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ endpoint, queue, notificationTypes })
+  });
+
+  if (!response.ok) throw new Error('Failed to update notification queue');
+  const data = await response.json();
+  return data.success;
+};
