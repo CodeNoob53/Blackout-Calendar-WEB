@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Interval } from '../../types';
 import { getPercentage, getDurationPercentage, getCurrentTimePercentage } from '../../utils/timeHelper';
 
@@ -8,33 +8,47 @@ interface TimelineProps {
 }
 
 const Timeline: React.FC<TimelineProps> = ({ intervals, isToday }) => {
-  const currentTimePct = getCurrentTimePercentage();
-  const markers = [0, 4, 8, 12, 16, 20, 24];
+  const [currentTimePct, setCurrentTimePct] = useState(getCurrentTimePercentage());
+  const markers = Array.from({ length: 25 }, (_, i) => i);
+
+  useEffect(() => {
+    if (!isToday) return;
+
+    // Оновлюємо кожну хвилину
+    const interval = setInterval(() => {
+      setCurrentTimePct(getCurrentTimePercentage());
+    }, 60000);
+
+    // Оновити одразу при монтуванні, щоб уникнути рассинхрону
+    setCurrentTimePct(getCurrentTimePercentage());
+
+    return () => clearInterval(interval);
+  }, [isToday]);
 
   return (
     <div className="timeline-container">
       {/* Background track */}
       <div className="timeline-track">
-        
+
         {/* Outage Blocks */}
         {intervals.map((interval, idx) => {
           const left = getPercentage(interval.start);
           const width = getDurationPercentage(interval.start, interval.end);
-          
+
           return (
             <div
               key={idx}
               className="timeline-block"
               style={{ left: `${left}%`, width: `${width}%` }}
             >
-               <div className="timeline-pattern"></div>
+              <div className="timeline-pattern"></div>
             </div>
           );
         })}
 
         {/* Current Time Indicator */}
         {isToday && (
-          <div 
+          <div
             className="timeline-current-line"
             style={{ left: `${currentTimePct}%` }}
           >
@@ -47,14 +61,16 @@ const Timeline: React.FC<TimelineProps> = ({ intervals, isToday }) => {
       <div className="timeline-markers">
         {markers.map((hour) => (
           <div key={hour} className="marker-item">
-             <span className="marker-label">
-               {hour.toString().padStart(2, '0')}
-             </span>
-             <div className="marker-tick"></div>
+            {hour % 2 === 0 && (
+              <span className="marker-label">
+                {hour.toString().padStart(2, '0')}
+              </span>
+            )}
+            <div className="marker-tick"></div>
           </div>
         ))}
       </div>
-      
+
       {/* Legend */}
       <div className="timeline-legend">
         <div className="legend-item">

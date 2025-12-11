@@ -14,7 +14,7 @@
   margin-bottom: 1.5rem;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 440px) {
   .github-links {
     flex-direction: row;
     gap: 1.5rem;
@@ -22,28 +22,29 @@
 }
 
 .github-btn {
-  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1rem;
+  background: hsl(0deg 0% 93.33%);
+  border: 1px solid rgb(77 161 255 / 64%);
   border-radius: 0.75rem;
-  background: rgba(255,255,255,0.4);
-  border: 1px solid var(--border-color);
   color: var(--text-secondary);
+  display: flex;
   font-size: 0.75rem;
   font-weight: 700;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
   text-decoration: none;
   transition: all 0.2s;
+  z-index: 10;
 }
 
 .github-btn:hover {
-  background: rgba(255,255,255,1);
+  background: rgba(255, 255, 255, 1);
   color: var(--text-primary);
   box-shadow: 0 4px 6px -1px var(--shadow-color);
 }
 
 .dark .github-btn {
-  background: rgba(31, 41, 59, 0.3);
+  background: rgb(11, 15, 22);
 }
 
 .dark .github-btn:hover {

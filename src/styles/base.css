@@ -1,6 +1,8 @@
 /* Base Reset & Body Styles */
 
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -9,7 +11,9 @@ body {
   padding: 0;
   font-family: 'Inter', sans-serif;
   background: var(--bg-main);
-  background-attachment: fixed; /* Ensures gradient covers full scroll */
+  background-attachment: fixed;
+  /* Ensures gradient covers full scroll */
+  background-blend-mode: multiply, multiply;
   color: var(--text-primary);
   min-height: 100vh;
   transition: background 0.5s ease;
@@ -17,7 +21,8 @@ body {
 
 /* Utility Classes */
 .container {
-  max-width: 48rem; /* 3xl */
+  max-width: 48rem;
+  /* 3xl */
   margin: 0 auto;
   padding: 0 1rem;
 }
@@ -29,7 +34,8 @@ body {
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-card);
   transition: all 0.3s ease;
-  transform: translateZ(0); /* GPU */
+  transform: translateZ(0);
+  /* GPU */
 }
 
 .flex-center {

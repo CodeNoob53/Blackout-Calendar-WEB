@@ -432,30 +432,25 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         <>
           <div className="modal-backdrop" onClick={() => setIsOpen(false)} />
 
-          <div
-            className="modal-content"
-            style={{
-              top: window.innerWidth >= 640 ? position.top : 'auto',
-              right: window.innerWidth >= 640 ? position.right : 0,
-            }}
-          >
+          <div className="modal-content" style={{
+            '--modal-top': `${position.top}px`,
+            '--modal-right': `${position.right}px`
+          } as React.CSSProperties}>
 
             <div className="modal-header">
-              <div style={{ display: 'flex' }}>
-                <button
-                  onClick={() => setActiveTab('notifications')}
-                  className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
-                >
-                  Сповіщення ({unreadCount})
-                </button>
-                <button
-                  onClick={() => setActiveTab('settings')}
-                  className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
-                >
-                  Налаштування
-                </button>
-              </div>
-              <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <button
+                onClick={() => setActiveTab('notifications')}
+                className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
+              >
+                Сповіщення {unreadCount > 0 && `(${unreadCount})`}
+              </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
+              >
+                Налаштування
+              </button>
+              <button onClick={() => setIsOpen(false)} className="close-btn">
                 <X size={20} />
               </button>
             </div>
@@ -534,7 +529,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   )}
 
                   {permission === 'granted' && (
-                    <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(34, 197, 94, 0.1)', border: '1px solid rgba(34, 197, 94, 0.3)' }}>
+                    <div style={{
+                      padding: '1rem',
+                      marginBottom: '1rem',
+                      borderRadius: '0.75rem',
+                      background: isPushEnabled ? 'rgba(34, 197, 94, 0.1)' : 'rgba(249, 115, 22, 0.1)',
+                      border: isPushEnabled ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(249, 115, 22, 0.3)'
+                    }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <div>
                           <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

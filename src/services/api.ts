@@ -1,6 +1,7 @@
 import { ScheduleResponse, DateListResponse, AddressSearchResponse, CachedScheduleData, NewSchedulesResponse, ChangedSchedulesResponse } from '../types';
 
-const BASE_URL = 'https://blackout-calendar.onrender.com/api';
+// Використовуємо relative path для роботи через проксі (dev) або nginx (prod)
+const BASE_URL = '/api';
 
 export const CACHE_KEYS = {
   LATEST_SCHEDULE: 'cached_schedule_latest',
@@ -72,7 +73,7 @@ export const fetchScheduleByDate = async (date: string): Promise<ScheduleRespons
   const response = await fetchWithTimeout(`${BASE_URL}/schedules/${date}`);
   if (response.status === 404) return null;
   if (!response.ok) throw new Error(`Failed to fetch schedule for ${date}`);
-  
+
   const data = await response.json();
   // Cache successful responses
   if (data.success) {
@@ -155,4 +156,13 @@ export const updateNotificationQueue = async (
   if (!response.ok) throw new Error('Failed to update notification queue');
   const data = await response.json();
   return data.success;
+};
+
+export const checkHealth = async (): Promise<boolean> => {
+  try {
+    const response = await fetchWithTimeout(`${BASE_URL}/healthz`, 5000);
+    return response.ok;
+  } catch (error) {
+    return false;
+  }
 };

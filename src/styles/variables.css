@@ -1,45 +1,47 @@
 /* Theme Variables - Light & Dark Mode */
 
 :root {
-  /* Light Theme Variables */
-  --bg-main: linear-gradient(135deg, #DCEDC8, #F1F8E9, #FFFFFF);
+  /* Light Theme Variables - Custom Palette */
+  --bg-main: linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 0%, rgba(0, 0, 0, 0.15) 100%), radial-gradient(at top center, rgba(255, 255, 255, 0.40) 0%, rgba(0, 0, 0, 0.40) 120%) #989898;
   --bg-card: rgba(255, 255, 255, 0.85);
   --bg-header: rgba(255, 255, 255, 0.7);
 
-  --text-primary: #0f172a;
-  --text-secondary: #334155;
-  --text-muted: #64748b;
+  --text-primary: #333333;
+  --text-secondary: #4da1ff;
+  --text-muted: #808080;
 
-  --primary-color: #8BC34A; /* Nature 500 */
-  --primary-dark: #689F38;
-  --primary-light: #C5E1A5;
+  --primary-color: #4da1ff;
+  /* Blue */
+  --primary-dark: #3a8ae6;
+  --primary-light: #6fb3ff;
 
-  --accent-color: #8BC34A;
-  --accent-glow: rgba(139, 195, 74, 0.3);
+  --accent-color: #ff9900;
+  /* Orange */
+  --accent-glow: rgba(255, 153, 0, 0.3);
 
-  --border-color: rgba(255, 255, 255, 0.4);
-  --border-subtle: #e2e8f0;
+  --border-color: rgba(77, 161, 255, 0.2);
+  --border-subtle: #e8e8e8;
 
-  --shadow-color: rgba(51, 105, 30, 0.1);
+  --shadow-color: rgba(36, 36, 36, 0.945);
   --shadow-card: 0 10px 30px -10px var(--shadow-color);
 
-  --success-bg: #DCEDC8;
-  --success-text: #33691e;
+  --success-bg: #E8F5E9;
+  --success-text: #2e7d32;
 
-  --warning-bg: #FEF3C7;
-  --warning-text: #B45309;
+  --warning-bg: #FFF3E0;
+  --warning-text: #ff9900;
 
-  --danger-bg: #FEE2E2;
-  --danger-text: #B91C1C;
+  --danger-bg: #FFEBEE;
+  --danger-text: #e74c3c;
 
-  --toggle-bg: #e2e8f0;
-  --active-indicator: #0f172a;
+  --toggle-bg: #e8e8e8;
+  --active-indicator: #333333;
 
-  --timeline-track: linear-gradient(90deg, #8BC34A, #9CCC65, #8BC34A);
-  --timeline-block-bg: rgba(55, 71, 79, 0.9);
-  --timeline-border: rgba(55, 71, 79, 0.5);
+  --timeline-track: linear-gradient(90deg, #4da1ff, #6fb3ff, #4da1ff);
+  --timeline-block-bg: rgba(51, 51, 51, 0.85);
+  --timeline-border: rgba(51, 51, 51, 0.4);
 
-  --queue-active-bg: #8BC34A;
+  --queue-active-bg: #4da1ff;
   --queue-active-text: #ffffff;
 }
 
@@ -53,7 +55,8 @@
   --text-secondary: #cbd5e1;
   --text-muted: #94a3b8;
 
-  --primary-color: #f59e0b; /* Amber 500 */
+  --primary-color: #f59e0b;
+  /* Amber 500 */
   --primary-dark: #d97706;
   --primary-light: #fbbf24;
 
