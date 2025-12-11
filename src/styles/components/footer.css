@@ -1,7 +1,7 @@
 /* Footer */
 .app-footer {
   text-align: center;
-  padding: 2rem 1rem 3rem 1rem;
+  padding: 2rem 1rem 2rem 1rem;
   margin-top: 2rem;
 }
 
@@ -41,6 +41,24 @@
   background: rgba(255, 255, 255, 1);
   color: var(--text-primary);
   box-shadow: 0 4px 6px -1px var(--shadow-color);
+}
+
+.footer-info {
+  opacity: 0.6;
+}
+
+.footer-copyright {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin: 0;
+}
+
+.footer-disclaimer {
+  font-size: 0.625rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.25rem;
+  margin-bottom: 0;
 }
 
 .dark .github-btn {

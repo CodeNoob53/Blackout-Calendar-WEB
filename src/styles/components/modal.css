@@ -231,6 +231,12 @@
   border-color: rgba(34, 197, 94, 0.3);
 }
 
+.notification-item svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 /* Toggle Switch in Settings */
 .setting-row {
   display: flex;

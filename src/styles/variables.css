@@ -40,9 +40,39 @@
   --timeline-track: linear-gradient(90deg, #4da1ff, #6fb3ff, #4da1ff);
   --timeline-block-bg: rgba(51, 51, 51, 0.85);
   --timeline-border: rgba(51, 51, 51, 0.4);
+  --timeline-marker-color: #272f39;
+  --timeline-marker-tick-bg: #eaeaea;
 
   --queue-active-bg: #4da1ff;
   --queue-active-text: #ffffff;
+  --queue-btn-bg: hsl(0deg 0% 98.79%);
+  --queue-btn-hover-bg: #ffffff;
+  --queue-btn-border: var(--border-color);
+  --queue-btn-shadow: none;
+  --queue-btn-active-border: #ffffff;
+  --queue-btn-active-shadow: 0px 2px 4px 0px #4da1ff;
+
+  --date-btn-bg: hsla(0, 0%, 100%, 0.055);
+  --date-btn-border: #ccddf0;
+  --date-btn-hover-bg: #ffffff;
+  --date-btn-hover-border: var(--primary-light);
+  --date-btn-hover-shadow: none;
+  --date-btn-active-bg: hsl(0deg 0% 100%);
+  --date-btn-active-border: var(--primary-light);
+  --date-btn-active-color: #4da1ff;
+  --date-btn-active-shadow: 0px 2px 3px 0px rgb(103 103 103);
+
+  --clock-container-bg: hsl(0deg 0% 100%);
+  --clock-container-border: rgb(77 161 255);
+  --clock-container-shadow: var(--date-btn-active-shadow);
+
+  --logo-icon-shadow: 0px 2px 3px 0px rgb(103 103 103);
+  --logo-icon-border: 1px solid rgba(77, 161, 255, 0.3);
+
+  --icon-btn-bg: hsla(0, 0%, 100%, .7);
+  --icon-btn-hover-bg: rgba(255, 255, 255, 0.9);
+  --icon-btn-border: rgb(77 161 255 / 70%);
+  --icon-btn-hover-shadow: var(--logo-icon-shadow);
 }
 
 .dark {
@@ -84,7 +114,37 @@
   --timeline-track: linear-gradient(90deg, #f59e0b, #fbbf24, #f59e0b);
   --timeline-block-bg: #1e293b;
   --timeline-border: rgba(31, 41, 59, 0.5);
+  --timeline-marker-color: var(--text-muted);
+  --timeline-marker-tick-bg: rgba(255, 255, 255, 0.2);
 
   --queue-active-bg: #f59e0b;
   --queue-active-text: #0f172a;
+  --queue-btn-bg: rgba(255, 255, 255, 0.1);
+  --queue-btn-hover-bg: rgba(255, 255, 255, 0.2);
+  --queue-btn-border: var(--border-subtle);
+  --queue-btn-shadow: none;
+  --queue-btn-active-border: var(--primary-dark);
+  --queue-btn-active-shadow: 0 10px 15px -3px var(--accent-glow);
+
+  --date-btn-bg: rgba(255, 255, 255, 0.1);
+  --date-btn-border: transparent;
+  --date-btn-hover-bg: rgba(255, 255, 255, 0.2);
+  --date-btn-hover-border: transparent;
+  --date-btn-hover-shadow: none;
+  --date-btn-active-bg: var(--bg-card);
+  --date-btn-active-border: var(--primary-light);
+  --date-btn-active-color: var(--text-primary);
+  --date-btn-active-shadow: 0 4px 6px -1px var(--shadow-color);
+
+  --clock-container-bg: rgba(255, 255, 255, 0.1);
+  --clock-container-border: var(--border-color);
+  --clock-container-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+
+  --logo-icon-shadow: 0 4px 6px -1px rgb(245 158 11 / 34%);
+  --logo-icon-border: 1px solid hsl(0deg 0% 100% / 57%);
+
+  --icon-btn-bg: rgba(31, 41, 59, 0.5);
+  --icon-btn-hover-bg: rgb(46 58 79 / 80%);
+  --icon-btn-border: hsl(0deg 0% 100% / 18%);
+  --icon-btn-hover-shadow: 0px 2px 7px -1px rgb(255 173 32 / 26%);
 }

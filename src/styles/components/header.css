@@ -28,7 +28,8 @@
   padding: 0.5rem;
   border-radius: 0.75rem;
   background: linear-gradient(135deg, var(--primary-light), var(--primary-dark));
-  box-shadow: 0 4px 6px -1px var(--accent-glow);
+  box-shadow: var(--logo-icon-shadow);
+  border: var(--logo-icon-border);
   color: white;
 }
 

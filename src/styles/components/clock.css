@@ -18,9 +18,9 @@
   width: 100%;
   height: 100%;
   border-radius: 1.5rem;
-  border: 1px solid var(--border-color);
-  background: rgba(255,255,255, 0.1);
-  box-shadow: inset 0 2px 4px 0 rgba(0, 0, 0, 0.06);
+  border: 1px solid var(--clock-container-border);
+  background: var(--clock-container-bg);
+  box-shadow: var(--clock-container-shadow);
 }
 
 .clock-label {
@@ -49,8 +49,15 @@
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.2; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.2;
+  }
 }
 
 /* Date Buttons */
@@ -62,24 +69,28 @@
   width: 100%;
   height: 100%;
   border-radius: 1.5rem;
-  border: 1px solid transparent;
-  background: rgba(255,255,255, 0.1);
+  border: 1px solid var(--date-btn-border);
+  background: var(--date-btn-bg);
   color: var(--text-secondary);
   cursor: pointer;
   position: relative;
   overflow: hidden;
   transition: all 0.3s ease;
+  box-shadow: 0px 1px 3px 0px rgb(36 36 36 / 42%);
 }
 
 .date-btn:hover {
-  background: rgba(255,255,255, 0.2);
+  background: var(--date-btn-hover-bg);
+  opacity: 1;
+  border-color: var(--date-btn-hover-border);
+  box-shadow: var(--date-btn-hover-shadow);
 }
 
 .date-btn.active {
-  background: var(--bg-card);
-  border-color: var(--primary-light);
-  box-shadow: 0 4px 6px -1px var(--shadow-color);
-  color: var(--text-primary);
+  background: var(--date-btn-active-bg);
+  border-color: var(--date-btn-active-border);
+  color: var(--date-btn-active-color);
+  box-shadow: var(--date-btn-active-shadow);
 }
 
 .date-weekday {
@@ -111,4 +122,3 @@
   box-shadow: 0 0 5px var(--primary-color);
   z-index: 10;
 }
-

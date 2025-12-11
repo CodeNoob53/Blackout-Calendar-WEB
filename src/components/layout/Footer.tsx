@@ -26,11 +26,11 @@ const Footer: React.FC = () => {
         </a>
       </div>
 
-      <div style={{ opacity: 0.6 }}>
-        <p style={{ fontSize: '0.875rem', fontWeight: 500, margin: 0 }}>
+      <div className="footer-info">
+        <p className="footer-copyright">
           © {new Date().getFullYear()} Blackout Calendar.
         </p>
-        <p style={{ fontSize: '0.625rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>
+        <p className="footer-disclaimer">
           Дані отримані з відкритих джерел
         </p>
       </div>

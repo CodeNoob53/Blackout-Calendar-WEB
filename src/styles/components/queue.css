@@ -44,26 +44,26 @@
   border-radius: 0.75rem;
   font-weight: 700;
   font-size: 0.875rem;
-  border: 1px solid var(--border-subtle);
-  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--queue-btn-border);
+  background: var(--queue-btn-bg);
   color: var(--text-secondary);
   cursor: pointer;
   position: relative;
   overflow: hidden;
   transition: all 0.2s ease;
   transform: translateZ(0);
+  box-shadow: var(--queue-btn-shadow);
 }
 
 .queue-btn:hover {
   border-color: var(--primary-light);
-  background: rgba(255,255,255,0.2);
+  background: var(--queue-btn-hover-bg);
   color: var(--text-primary);
 }
 
 .queue-btn.active {
   background: var(--queue-active-bg);
   color: var(--queue-active-text);
-  border-color: var(--primary-dark);
-  box-shadow: 0 10px 15px -3px var(--accent-glow);
+  border-color: var(--queue-btn-active-border);
+  box-shadow: var(--queue-btn-active-shadow);
 }
-

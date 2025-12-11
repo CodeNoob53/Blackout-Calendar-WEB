@@ -1,28 +1,30 @@
 /* Notification & Theme Buttons */
 .icon-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0.5rem;
   border-radius: 0.75rem;
-  border: 1px solid var(--border-color);
-  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--icon-btn-border);
+  background: var(--icon-btn-bg);
   color: var(--text-secondary);
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
 }
 
-.dark .icon-btn {
-  background: rgba(31, 41, 59, 0.5);
-  color: var(--primary-color);
+.icon-btn svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .icon-btn:hover {
-  background: rgba(255,255,255,0.9);
+  background: var(--icon-btn-hover-bg);
   color: var(--text-primary);
-}
-
-.dark .icon-btn:hover {
-  background: rgba(31, 41, 59, 0.8);
-  color: white;
+  box-shadow: var(--icon-btn-hover-shadow);
 }
 
 .badge-dot {
@@ -46,7 +48,12 @@
 }
 
 @keyframes ping {
-  75%, 100% { transform: scale(2); opacity: 0; }
+
+  75%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }
 
 .badge-solid {
@@ -57,4 +64,3 @@
   width: 0.625rem;
   background: #ef4444;
 }
-

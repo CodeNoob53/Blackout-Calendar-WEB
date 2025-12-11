@@ -477,10 +477,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                       {notifications.map((n) => (
                         <div key={n.id} className={`notification-item ${n.type === 'warning' ? 'notif-warning' : n.type === 'info' ? 'notif-info' : 'notif-success'}`}>
                           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <div style={{ marginTop: '0.125rem' }}>
-                              {n.type === 'info' ? <Calendar size={14} /> :
-                                n.type === 'warning' ? <AlertTriangle size={14} /> :
-                                  <CheckCircle size={14} />}
+                            <div>
+                              {n.type === 'info' ? <Calendar size={20} /> :
+                                n.type === 'warning' ? <AlertTriangle size={20} /> :
+                                  <CheckCircle size={20} />}
                             </div>
 
                             <div style={{ flex: 1, minWidth: 0 }}>

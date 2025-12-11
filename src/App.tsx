@@ -240,7 +240,9 @@ const App: React.FC = () => {
             </h2>
             <span className="date-pill">
               <CalendarDays size={12} style={{ opacity: 0.7 }} />
-              {selectedDate ? formatDate(selectedDate) : '...'}
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {selectedDate ? formatDate(selectedDate) : '...'}
+              </span>
             </span>
           </div>
 
