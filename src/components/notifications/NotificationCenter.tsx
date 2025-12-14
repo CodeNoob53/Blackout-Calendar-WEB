@@ -64,6 +64,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       }
     })()
   );
+  const serverUnavailableNotified = useRef(false);
 
   const addNotification = (input: Omit<NotificationItem, 'id' | 'date' | 'read'>) => {
     const newItem: NotificationItem = {
@@ -73,6 +74,22 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       ...input
     };
     setNotifications(prev => [newItem, ...prev]);
+  };
+
+  const notifyServerUnavailable = () => {
+    if (serverUnavailableNotified.current) return;
+
+    addNotification({
+      title: 'Сервер недоступний',
+      message: 'Оновлення будуть доступні, щойно сервер відновить роботу.',
+      type: 'warning'
+    });
+
+    serverUnavailableNotified.current = true;
+  };
+
+  const resetServerUnavailable = () => {
+    serverUnavailableNotified.current = false;
   };
 
   useEffect(() => {
@@ -422,14 +439,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         try {
           const data = await fetchNewSchedules(24);
           if (!isMounted) return;
-          if (data.success && data.count > 0) {
-            processBatch(
-              data.schedules,
-              'info',
-              'new',
-              (item) => 'Новий графік',
-              (item) => item.pushMessage || `Доступний графік на ${item.date}`
-            );
+          if (data.serviceUnavailable) {
+            notifyServerUnavailable();
+          } else {
+            resetServerUnavailable();
+            if (data.success && data.count > 0) {
+              processBatch(
+                data.schedules,
+                'info',
+                'new',
+                (item) => 'Новий графік',
+                (item) => item.pushMessage || `Доступний графік на ${item.date}`
+              );
+            }
           }
         } catch (e) {
           console.error("Failed to check new schedules", e);
@@ -440,14 +462,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         try {
           const data = await fetchChangedSchedules(24);
           if (!isMounted) return;
-          if (data.success && data.count > 0) {
-            processBatch(
-              data.schedules,
-              'warning',
-              'change',
-              (item) => 'Зміни в графіку',
-              (item) => item.pushMessage || `Внесено зміни в графік на ${item.date}`
-            );
+          if (data.serviceUnavailable) {
+            notifyServerUnavailable();
+          } else {
+            resetServerUnavailable();
+            if (data.success && data.count > 0) {
+              processBatch(
+                data.schedules,
+                'warning',
+                'change',
+                (item) => 'Зміни в графіку',
+                (item) => item.pushMessage || `Внесено зміни в графік на ${item.date}`
+              );
+            }
           }
         } catch (e) {
           console.error("Failed to check changed schedules", e);

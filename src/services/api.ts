@@ -99,7 +99,14 @@ export const searchAddress = async (query: string): Promise<AddressSearchRespons
 
 export const fetchNewSchedules = async (hours = 24): Promise<NewSchedulesResponse> => {
   const response = await fetchWithTimeout(`${BASE_URL}/updates/new?hours=${hours}`);
-  if (!response.ok) throw new Error('Failed to fetch new schedules');
+
+  if (!response.ok) {
+    if (response.status === 503) {
+      console.warn('Updates API temporarily unavailable (new schedules)');
+      return { success: true, count: 0, schedules: [], serviceUnavailable: true };
+    }
+    throw new Error('Failed to fetch new schedules');
+  }
 
   // Check if response is actually JSON
   const contentType = response.headers.get('content-type');
@@ -113,7 +120,14 @@ export const fetchNewSchedules = async (hours = 24): Promise<NewSchedulesRespons
 
 export const fetchChangedSchedules = async (hours = 24): Promise<ChangedSchedulesResponse> => {
   const response = await fetchWithTimeout(`${BASE_URL}/updates/changed?hours=${hours}`);
-  if (!response.ok) throw new Error('Failed to fetch changed schedules');
+
+  if (!response.ok) {
+    if (response.status === 503) {
+      console.warn('Updates API temporarily unavailable (changed schedules)');
+      return { success: true, count: 0, schedules: [], serviceUnavailable: true };
+    }
+    throw new Error('Failed to fetch changed schedules');
+  }
 
   // Check if response is actually JSON
   const contentType = response.headers.get('content-type');

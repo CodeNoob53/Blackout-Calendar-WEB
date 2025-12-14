@@ -78,6 +78,7 @@ export interface NewSchedulesResponse {
   success: boolean;
   count: number;
   schedules: NewScheduleItem[];
+  serviceUnavailable?: boolean;
 }
 
 export interface ChangedScheduleItem {
@@ -93,4 +94,5 @@ export interface ChangedSchedulesResponse {
   success: boolean;
   count: number;
   schedules: ChangedScheduleItem[];
+  serviceUnavailable?: boolean;
 }
