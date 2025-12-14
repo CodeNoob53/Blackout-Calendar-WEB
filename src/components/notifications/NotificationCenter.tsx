@@ -364,7 +364,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
   useEffect(() => {
     if (pushSubscription && currentQueueData) {
-      // Add small delay to ensure subscription is saved in DB first
+      // Add delay to ensure subscription is saved in DB first
+      // Increased to 2000ms to account for network latency to Render backend
       const timeoutId = setTimeout(async () => {
         try {
           await updateNotificationQueue(
@@ -373,23 +374,23 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             ['all']
           );
         } catch (error: any) {
-          console.warn('Failed to update queue initially, attempting to resync subscription...', error);
+          console.warn('Failed to update queue initially, will retry in 2s...', error);
 
-          // Fallback: If 404 (subscription missing on backend), try to re-subscribe
-          try {
-            // Re-run the subscription flow to register on backend
-            await subscribeToPush();
-            // Try updating queue again
-            await updateNotificationQueue(
-              pushSubscription.endpoint,
-              currentQueueData.queue,
-              ['all']
-            );
-          } catch (retryError) {
-            console.error('Failed to recover subscription/queue update:', retryError);
-          }
+          // Retry after another 2 seconds
+          setTimeout(async () => {
+            try {
+              await updateNotificationQueue(
+                pushSubscription.endpoint,
+                currentQueueData.queue,
+                ['all']
+              );
+              console.log('Queue updated successfully on retry');
+            } catch (retryError) {
+              console.error('Failed to update queue after retry:', retryError);
+            }
+          }, 2000);
         }
-      }, 500);
+      }, 2000);
 
       return () => clearTimeout(timeoutId);
     }
