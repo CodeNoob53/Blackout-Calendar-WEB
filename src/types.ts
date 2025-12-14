@@ -13,6 +13,7 @@ export interface ScheduleResponse {
   date: string;
   queues: QueueData[];
   error?: string;
+  serviceUnavailable?: boolean;
 }
 
 export interface DateListResponse {

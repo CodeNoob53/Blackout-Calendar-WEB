@@ -23,6 +23,7 @@ const App: React.FC = () => {
   const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(null);
   const [isUsingCache, setIsUsingCache] = useState(false);
   const [isWakingUp, setIsWakingUp] = useState(false);
+  const [serverUnavailable, setServerUnavailable] = useState(false);
 
   const [dateOptions] = useState<DateOption[]>(getThreeDayRange());
   const [selectedDate, setSelectedDate] = useState<string>(getThreeDayRange()[1].iso);
@@ -71,6 +72,7 @@ const App: React.FC = () => {
       }
 
       try {
+        setServerUnavailable(false);
         let data = await fetchScheduleByDate(selectedDate).catch(() => null);
 
         if (!data && selectedDate === getLocalISODate()) {
@@ -78,6 +80,18 @@ const App: React.FC = () => {
           if (latest && latest.date === selectedDate) {
             data = latest;
           }
+        }
+
+        if (data?.serviceUnavailable) {
+          setServerUnavailable(true);
+          if (!cachedData) {
+            setScheduleData(null);
+            setIsUsingCache(false);
+            setStatus('error');
+          } else {
+            setStatus('success');
+          }
+          return;
         }
 
         if (data) {
@@ -121,6 +135,7 @@ const App: React.FC = () => {
     if (date === selectedDate) return;
     setSelectedDate(date);
     setStatus('loading');
+    setServerUnavailable(false);
 
     const cachedKey = `${CACHE_KEYS.SCHEDULE_PREFIX}${date}`;
     const cachedData = getFromCache<ScheduleResponse>(cachedKey);
@@ -134,6 +149,17 @@ const App: React.FC = () => {
 
     try {
       const data = await fetchScheduleByDate(date);
+      if (data?.serviceUnavailable) {
+        setServerUnavailable(true);
+        if (!cachedData) {
+          setScheduleData(null);
+          setIsUsingCache(false);
+          setStatus('error');
+        } else {
+          setStatus('success');
+        }
+        return;
+      }
       if (data) {
         setScheduleData(data);
         setIsUsingCache(false);
@@ -261,7 +287,12 @@ const App: React.FC = () => {
               <div className="state-icon-box" style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)', borderColor: 'var(--danger-text)' }}>
                 <AlertTriangle size={32} />
               </div>
-              <p className="font-medium">Помилка завантаження</p>
+              <p className="font-medium">{serverUnavailable ? 'Сервер тимчасово недоступний' : 'Помилка завантаження'}</p>
+              <p className="text-xs mt-1">
+                {serverUnavailable
+                  ? 'Спробуйте ще раз за кілька хвилин. Якщо проблема не зникає, перегляньте наш Telegram.'
+                  : 'Перевірте підключення до інтернету та спробуйте оновити сторінку.'}
+              </p>
             </div>
           ) : !scheduleData || !currentQueueData ? (
             <div className="state-container">

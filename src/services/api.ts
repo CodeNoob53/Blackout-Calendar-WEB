@@ -61,7 +61,13 @@ export const getFromCache = <T>(key: string): T | null => {
 
 export const fetchLatestSchedule = async (): Promise<ScheduleResponse> => {
   const response = await fetchWithTimeout(`${BASE_URL}/schedules/latest`);
-  if (!response.ok) throw new Error('Failed to fetch latest schedule');
+  if (!response.ok) {
+    if (response.status === 503) {
+      console.warn('Schedules API temporarily unavailable (latest)');
+      return { success: false, date: '', queues: [], serviceUnavailable: true };
+    }
+    throw new Error('Failed to fetch latest schedule');
+  }
   return response.json();
 };
 
@@ -72,7 +78,13 @@ export const fetchScheduleByDate = async (date: string): Promise<ScheduleRespons
 
   const response = await fetchWithTimeout(`${BASE_URL}/schedules/${date}`);
   if (response.status === 404) return null;
-  if (!response.ok) throw new Error(`Failed to fetch schedule for ${date}`);
+  if (!response.ok) {
+    if (response.status === 503) {
+      console.warn('Schedules API temporarily unavailable');
+      return { success: false, date, queues: [], serviceUnavailable: true };
+    }
+    throw new Error(`Failed to fetch schedule for ${date}`);
+  }
 
   const data = await response.json();
   // Cache successful responses
