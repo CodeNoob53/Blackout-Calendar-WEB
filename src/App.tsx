@@ -22,7 +22,6 @@ const App: React.FC = () => {
   const [status, setStatus] = useState<FetchStatus>('idle');
   const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(null);
   const [isUsingCache, setIsUsingCache] = useState(false);
-  const [isWakingUp, setIsWakingUp] = useState(false);
   const [serverUnavailable, setServerUnavailable] = useState(false);
 
   const [dateOptions] = useState<DateOption[]>(getThreeDayRange());
@@ -64,12 +63,6 @@ const App: React.FC = () => {
       }
 
       let wakeUpTimer: ReturnType<typeof setTimeout> | null = null;
-
-      if (!cachedData) {
-        wakeUpTimer = setTimeout(() => {
-          setIsWakingUp(true);
-        }, 800);
-      }
 
       try {
         setServerUnavailable(false);
@@ -116,9 +109,6 @@ const App: React.FC = () => {
         } else {
           setStatus('success');
         }
-      } finally {
-        if (wakeUpTimer) clearTimeout(wakeUpTimer);
-        setIsWakingUp(false);
       }
     };
     init();
@@ -272,13 +262,7 @@ const App: React.FC = () => {
             </span>
           </div>
 
-          {isWakingUp && !isUsingCache ? (
-            <div className="state-container animate-pulse">
-              <Server size={40} className="text-primary mb-2" />
-              <h3 className="font-bold">Сервер прокидається...</h3>
-              <p className="text-sm">Зачекайте, будь ласка.</p>
-            </div>
-          ) : status === 'loading' && !isUsingCache ? (
+          {status === 'loading' && !isUsingCache ? (
             <div className="state-container">
               <RefreshCw size={32} className="spin-icon opacity-50" />
             </div>
