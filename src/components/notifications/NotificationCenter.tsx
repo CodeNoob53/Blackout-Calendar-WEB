@@ -343,27 +343,83 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   }, [currentQueueData, pushSubscription]);
 
   useEffect(() => {
+    let isMounted = true;
+
     const checkForUpdates = async () => {
+      // Helper to process a batch of items (new or changed)
+      const processBatch = (
+        items: any[],
+        type: 'info' | 'warning',
+        idPrefix: string,
+        getTitle: (item: any) => string,
+        getMsg: (item: any) => string
+      ) => {
+        // 1. Identify all unprocessed items
+        const unprocessedItems = items.filter(item => {
+          const id = item.updatedAt
+            ? `${idPrefix}-${item.date}-${item.updatedAt}`
+            : `${idPrefix}-${item.date}-${item.sourcePostId}`;
+          return !processedUpdateIds.current.has(id);
+        });
+
+        if (unprocessedItems.length === 0) return;
+
+        // 2. Group by date
+        const byDate: Record<string, any[]> = {};
+        unprocessedItems.forEach(item => {
+          if (!byDate[item.date]) byDate[item.date] = [];
+          byDate[item.date].push(item);
+        });
+
+        // 3. For each date, find the LATEST item to notify about
+        // But mark ALL as processed so they don't show up later
+        Object.entries(byDate).forEach(([date, dateItems]) => {
+          // Sort by time (updatedAt or messageDate or just trust the order? Backend usually sorts DESC, but let's be safe)
+          dateItems.sort((a, b) => {
+            const tA = new Date(a.updatedAt || a.messageDate || 0).getTime();
+            const tB = new Date(b.updatedAt || b.messageDate || 0).getTime();
+            return tB - tA;
+          });
+
+          const latestItem = dateItems[0]; // The winner
+
+          // Notify ONLY for the latest item
+          const title = getTitle(latestItem);
+          const msg = getMsg(latestItem);
+
+          addNotification({
+            title: title,
+            message: msg,
+            type: type
+          });
+          sendSystemNotification(title, msg);
+
+          // Mark ALL items for this date as processed
+          dateItems.forEach(item => {
+            const id = item.updatedAt
+              ? `${idPrefix}-${item.date}-${item.updatedAt}`
+              : `${idPrefix}-${item.date}-${item.sourcePostId}`;
+            processedUpdateIds.current.add(id);
+          });
+        });
+
+        // Update storage once after processing all dates
+        localStorage.setItem('notification_processed_updates', JSON.stringify(Array.from(processedUpdateIds.current)));
+      };
+
+
       if (settings.tomorrowSchedule) {
         try {
           const data = await fetchNewSchedules(24);
+          if (!isMounted) return;
           if (data.success && data.count > 0) {
-            data.schedules.forEach(item => {
-              const id = `new-${item.date}-${item.sourcePostId}`;
-              if (!processedUpdateIds.current.has(id)) {
-                const title = 'Новий графік';
-                const msg = item.pushMessage || `Доступний графік на ${item.date}`;
-
-                addNotification({
-                  title: title,
-                  message: msg,
-                  type: 'info'
-                });
-                sendSystemNotification(title, msg);
-                processedUpdateIds.current.add(id);
-              }
-            });
-            localStorage.setItem('notification_processed_updates', JSON.stringify(Array.from(processedUpdateIds.current)));
+            processBatch(
+              data.schedules,
+              'info',
+              'new',
+              (item) => 'Новий графік',
+              (item) => item.pushMessage || `Доступний графік на ${item.date}`
+            );
           }
         } catch (e) {
           console.error("Failed to check new schedules", e);
@@ -373,23 +429,15 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       if (settings.scheduleUpdates) {
         try {
           const data = await fetchChangedSchedules(24);
+          if (!isMounted) return;
           if (data.success && data.count > 0) {
-            data.schedules.forEach(item => {
-              const id = `change-${item.date}-${item.updatedAt}`;
-              if (!processedUpdateIds.current.has(id)) {
-                const title = 'Зміни в графіку';
-                const msg = item.pushMessage || `Внесено зміни в графік на ${item.date}`;
-
-                addNotification({
-                  title: title,
-                  message: msg,
-                  type: 'warning'
-                });
-                sendSystemNotification(title, msg);
-                processedUpdateIds.current.add(id);
-              }
-            });
-            localStorage.setItem('notification_processed_updates', JSON.stringify(Array.from(processedUpdateIds.current)));
+            processBatch(
+              data.schedules,
+              'warning',
+              'change',
+              (item) => 'Зміни в графіку',
+              (item) => item.pushMessage || `Внесено зміни в графік на ${item.date}`
+            );
           }
         } catch (e) {
           console.error("Failed to check changed schedules", e);
@@ -399,7 +447,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
     checkForUpdates();
     const pollInterval = setInterval(checkForUpdates, 5 * 60 * 1000);
-    return () => clearInterval(pollInterval);
+
+    return () => {
+      isMounted = false;
+      clearInterval(pollInterval);
+    };
   }, [settings.tomorrowSchedule, settings.scheduleUpdates]);
 
   const markAllRead = () => {

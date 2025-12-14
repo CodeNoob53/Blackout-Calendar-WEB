@@ -104,12 +104,18 @@ self.addEventListener('push', (event) => {
     try {
       data = event.data.json();
     } catch (e) {
-      console.error('Failed to parse push data:', e);
+      console.error('Failed to parse push data, falling back to text:', e);
+      const text = event.data.text();
+      if (text) {
+        data.body = text;
+      }
     }
   }
 
   event.waitUntil(
     (async () => {
+      console.log('[SW] Push received:', data);
+
       const silentMode = await getSilentMode();
 
       // Завжди надсилати повідомлення до UI
@@ -134,10 +140,14 @@ self.addEventListener('push', (event) => {
           vibrate: [200, 100, 200],
           data: data.data,
           requireInteraction: false,
-          tag: `${data.data?.type || 'notification'}-${Date.now()}`
+          tag: data.tag || 'notification-default', // Fallback to avoid error with renotify: true
+          renotify: data.renotify
         };
 
+        console.log('[SW] Showing notification with tag:', data.tag);
         await self.registration.showNotification(data.title, options);
+      } else {
+        console.log('[SW] Silent mode enabled, skipping system notification');
       }
     })()
   );
