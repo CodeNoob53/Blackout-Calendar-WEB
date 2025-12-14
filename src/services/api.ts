@@ -100,12 +100,28 @@ export const searchAddress = async (query: string): Promise<AddressSearchRespons
 export const fetchNewSchedules = async (hours = 24): Promise<NewSchedulesResponse> => {
   const response = await fetchWithTimeout(`${BASE_URL}/updates/new?hours=${hours}`);
   if (!response.ok) throw new Error('Failed to fetch new schedules');
+
+  // Check if response is actually JSON
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    console.warn('API returned non-JSON response for new schedules');
+    return { success: true, count: 0, schedules: [] };
+  }
+
   return response.json();
 };
 
 export const fetchChangedSchedules = async (hours = 24): Promise<ChangedSchedulesResponse> => {
   const response = await fetchWithTimeout(`${BASE_URL}/updates/changed?hours=${hours}`);
   if (!response.ok) throw new Error('Failed to fetch changed schedules');
+
+  // Check if response is actually JSON
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    console.warn('API returned non-JSON response for changed schedules');
+    return { success: true, count: 0, schedules: [] };
+  }
+
   return response.json();
 };
 
