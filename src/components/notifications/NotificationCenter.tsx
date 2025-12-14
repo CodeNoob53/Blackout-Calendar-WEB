@@ -76,9 +76,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     setNotifications(prev => [newItem, ...prev]);
   };
 
-  // Show a single warning while the update API returns 503, so we don't spam
-  // users every polling cycle. Once the API recovers we reset the flag and
-  // allow new notifications again.
   const notifyServerUnavailable = () => {
     if (serverUnavailableNotified.current) return;
 
