@@ -18,8 +18,11 @@ FROM nginx:alpine
 # Copy built assets from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy custom nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy custom nginx config template
+COPY nginx.conf.template /etc/nginx/templates/default.conf.template
+
+# Default API URL (can be overridden at runtime)
+ENV API_URL=https://blackout-calendar.onrender.com
 
 # Port 8080 is required by Cloud Run
 EXPOSE 8080
