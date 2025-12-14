@@ -86,10 +86,20 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       const messageHandler = (event: MessageEvent) => {
         if (event.data && event.data.type === 'PUSH_NOTIFICATION') {
           const { notification } = event.data;
+
+          // Для аварійних ситуацій показуємо системний alert або модальне вікно (тут поки alert для надійності)
+          // Backend sends 'emergency_blackout' for sendEmergencyNotification
+          const isEmergency = notification.type === 'emergency' || notification.type === 'emergency_blackout';
+
+          if (isEmergency) {
+            // Можна замінити на гарне модальне вікно в майбутньому
+            alert(`🚨 ${notification.title}\n\n${notification.message}`);
+          }
+
           addNotification({
             title: notification.title,
             message: notification.message,
-            type: notification.type as 'info' | 'warning' | 'success'
+            type: isEmergency ? 'warning' : (notification.type as 'info' | 'warning' | 'success')
           });
         }
       };
@@ -510,41 +520,41 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             <div className="modal-body">
               {activeTab === 'notifications' ? (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginBottom: '0.75rem', paddingRight: '0.25rem' }}>
-                    <button onClick={markAllRead} style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      <Check size={12} style={{ marginRight: '4px' }} /> Позначити прочитаним
+                  <div className="nc-actions-header">
+                    <button onClick={markAllRead} className="nc-action-btn">
+                      <Check size={12} /> Позначити прочитаним
                     </button>
-                    <button onClick={clearHistory} style={{ fontSize: '10px', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer' }}>
-                      <Trash2 size={12} style={{ marginRight: '4px' }} /> Очистити
+                    <button onClick={clearHistory} className="nc-action-btn">
+                      <Trash2 size={12} /> Очистити
                     </button>
                   </div>
 
                   {notifications.length === 0 ? (
-                    <div style={{ padding: '4rem 0', textAlign: 'center', color: 'var(--text-muted)', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                      <Bell size={40} style={{ opacity: 0.3, marginBottom: '0.75rem' }} />
-                      <p style={{ fontSize: '0.875rem' }}>Сповіщень поки немає</p>
+                    <div className="nc-empty-state">
+                      <Bell size={40} className="nc-empty-icon" />
+                      <p className="nc-empty-text">Сповіщень поки немає</p>
                     </div>
                   ) : (
                     <div>
                       {notifications.map((n) => (
                         <div key={n.id} className={`notification-item ${n.type === 'warning' ? 'notif-warning' : n.type === 'info' ? 'notif-info' : 'notif-success'}`}>
-                          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                            <div>
-                              {n.type === 'info' ? <Calendar size={20} /> :
-                                n.type === 'warning' ? <AlertTriangle size={20} /> :
-                                  <CheckCircle size={20} />}
+                          <div className="nc-item-header">
+                            <div className="nc-icon-wrapper">
+                              {n.type === 'info' ? <Calendar size={40} /> :
+                                n.type === 'warning' ? <AlertTriangle size={40} /> :
+                                  <CheckCircle size={40} />}
                             </div>
 
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                              <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '0.25rem', lineHeight: 1.2 }}>{n.title}</h4>
-                              <p style={{ fontSize: '0.75rem', lineHeight: 1.4, wordBreak: 'break-word' }}>{n.message}</p>
-                              <span style={{ fontSize: '10px', fontFamily: 'monospace', marginTop: '0.5rem', display: 'block', color: 'var(--text-muted)' }}>
+                            <div className="nc-content">
+                              <h4 className="nc-title">{n.title}</h4>
+                              <p className="nc-message">{n.message}</p>
+                              <span className="nc-timestamp">
                                 {new Date(n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
 
                             {!n.read && (
-                              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#ef4444', flexShrink: 0, marginTop: '0.375rem' }} />
+                              <div className="nc-unread-dot" />
                             )}
                           </div>
                         </div>
@@ -555,17 +565,17 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
               ) : (
                 <div>
                   {permission === 'default' && (
-                    <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-                      <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div className="nc-permission-block">
+                      <h4 className="nc-permission-header">
                         <MessageSquare size={16} />
                         Системні сповіщення
                       </h4>
-                      <p style={{ fontSize: '0.75rem', marginBottom: '0.75rem', opacity: 0.8 }}>
+                      <p className="nc-permission-text">
                         Дозвольте надсилати сповіщення, щоб не пропустити відключення.
                       </p>
                       <button
                         onClick={requestPermission}
-                        style={{ width: '100%', padding: '0.5rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '0.5rem', fontWeight: 700, fontSize: '0.75rem', cursor: 'pointer' }}
+                        className="nc-permission-btn"
                       >
                         Увімкнути
                       </button>
@@ -573,24 +583,18 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   )}
 
                   {permission === 'denied' && (
-                    <div style={{ padding: '1rem', marginBottom: '1rem', borderRadius: '0.75rem', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-                      <p style={{ fontSize: '0.75rem', color: 'var(--danger-text)' }}>
+                    <div className="nc-permission-block denied">
+                      <p className="nc-denied-text">
                         Сповіщення заблоковано в налаштуваннях браузера.
                       </p>
                     </div>
                   )}
 
                   {permission === 'granted' && (
-                    <div style={{
-                      padding: '1rem',
-                      marginBottom: '1rem',
-                      borderRadius: '0.75rem',
-                      background: isPushEnabled ? 'rgba(34, 197, 94, 0.1)' : 'rgba(249, 115, 22, 0.1)',
-                      border: isPushEnabled ? '1px solid rgba(34, 197, 94, 0.3)' : '1px solid rgba(249, 115, 22, 0.3)'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className={`nc-push-block ${isPushEnabled ? 'enabled' : 'disabled'}`}>
+                      <div className="nc-push-row">
                         <div>
-                          <h4 style={{ fontSize: '0.875rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          <h4 className="nc-permission-header">
                             <CheckCircle size={16} />
                             Веб-пуш {isPushEnabled ? 'увімкнено' : 'вимкнено'}
                           </h4>
@@ -600,16 +604,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                         </div>
                         <button
                           onClick={isPushEnabled ? unsubscribeToPush : subscribeToPush}
-                          style={{
-                            padding: '0.5rem 1rem',
-                            background: isPushEnabled ? '#ef4444' : '#22c55e',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '0.5rem',
-                            fontWeight: 700,
-                            fontSize: '0.75rem',
-                            cursor: 'pointer'
-                          }}
+                          className={`nc-push-toggle-btn ${isPushEnabled ? 'disable' : 'enable'}`}
                         >
                           {isPushEnabled ? 'Вимкнути' : 'Увімкнути'}
                         </button>
@@ -617,7 +612,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                     </div>
                   )}
 
-                  <div style={{ borderRadius: '0.75rem', border: '1px solid var(--border-color)', background: 'var(--bg-card)' }}>
+                  <div className="nc-settings-container">
 
                     {[
                       {

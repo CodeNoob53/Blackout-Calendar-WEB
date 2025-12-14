@@ -232,8 +232,8 @@
 }
 
 .notification-item svg {
-  width: 20px;
-  height: 20px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
 }
 
@@ -276,6 +276,202 @@
   transform: translateX(0);
 }
 
-.toggle-switch.on .toggle-thumb {
-  transform: translateX(1.25rem);
+
+/* Refactored inline styles */
+
+/* Action buttons (Clear/Mark read) */
+.nc-actions-header {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding-right: 0.25rem;
+}
+
+.nc-action-btn {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.nc-action-btn:hover {
+  color: var(--text-primary);
+}
+
+.nc-action-btn svg {
+  margin-right: 4px;
+}
+
+/* Empty State */
+.nc-empty-state {
+  padding: 4rem 0;
+  text-align: center;
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.nc-empty-icon {
+  opacity: 0.3;
+  margin-bottom: 0.75rem;
+}
+
+.nc-empty-text {
+  font-size: 0.875rem;
+}
+
+/* Notification Item Internals */
+.nc-item-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.nc-icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+}
+
+.nc-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.nc-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+.nc-message {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.nc-timestamp {
+  font-size: 11px;
+  font-family: monospace;
+  margin-top: 0.5rem;
+  display: block;
+  color: var(--text-muted);
+}
+
+.nc-unread-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #ef4444;
+  flex-shrink: 0;
+}
+
+/* Permission Blocks */
+.nc-permission-block {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+}
+
+.nc-permission-block.denied {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.nc-permission-header {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.nc-permission-text {
+  font-size: 0.75rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.8;
+}
+
+.nc-permission-btn {
+  width: 100%;
+  padding: 0.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.nc-permission-btn:hover {
+  opacity: 0.9;
+}
+
+.nc-denied-text {
+  font-size: 0.75rem;
+  color: var(--danger-text);
+}
+
+/* Push Status */
+.nc-push-block {
+  padding: 1rem;
+  margin-bottom: 1rem;
+  border-radius: 0.75rem;
+}
+
+.nc-push-block.enabled {
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.nc-push-block.disabled {
+  background: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.3);
+}
+
+.nc-push-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nc-push-toggle-btn {
+  padding: 0.5rem 1rem;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 700;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.nc-push-toggle-btn.enable {
+  background: #22c55e;
+}
+
+.nc-push-toggle-btn.disable {
+  background: #ef4444;
+}
+
+/* Settings List */
+.nc-settings-container {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
 }
