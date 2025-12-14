@@ -33,7 +33,7 @@ body {
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-card);
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, is-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
   transform: translateZ(0);
   /* GPU */
 }

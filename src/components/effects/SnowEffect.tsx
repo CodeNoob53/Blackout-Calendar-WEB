@@ -14,21 +14,24 @@ interface SnowEffectProps {
     speed?: number;
 }
 
-const SnowEffect: React.FC<SnowEffectProps> = ({ count = 100, speed = 1 }) => {
+const SnowEffect: React.FC<SnowEffectProps> = React.memo(({ count = 100, speed = 1 }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const snowflakesRef = useRef<Snowflake[]>([]);
     const animationFrameRef = useRef<number>();
+    const isVisibleRef = useRef<boolean>(true); // Track visibility without re-render
 
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { alpha: true }); // Optimize context
         if (!ctx) return;
 
         const resizeCanvas = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+            if (canvas.width !== window.innerWidth || canvas.height !== window.innerHeight) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
         };
 
         const createSnowflake = (): Snowflake => ({
@@ -68,6 +71,8 @@ const SnowEffect: React.FC<SnowEffectProps> = ({ count = 100, speed = 1 }) => {
         };
 
         const animate = () => {
+            if (!isVisibleRef.current) return; // Skip if tab hidden
+
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             snowflakesRef.current.forEach((snowflake) => {
@@ -78,21 +83,44 @@ const SnowEffect: React.FC<SnowEffectProps> = ({ count = 100, speed = 1 }) => {
             animationFrameRef.current = requestAnimationFrame(animate);
         };
 
+        // Visibility API
+        const handleVisibilityChange = () => {
+            isVisibleRef.current = !document.hidden;
+            if (isVisibleRef.current && !animationFrameRef.current) {
+                animate();
+            } else if (!isVisibleRef.current && animationFrameRef.current) {
+                cancelAnimationFrame(animationFrameRef.current);
+                animationFrameRef.current = undefined;
+            }
+        };
+
+        // Debounced Resize
+        let resizeTimeout: ReturnType<typeof setTimeout>;
+        const handleResize = () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                resizeCanvas();
+            }, 100);
+        };
+
         resizeCanvas();
         initSnowflakes();
         animate();
 
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('resize', handleResize);
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
         return () => {
-            window.removeEventListener('resize', resizeCanvas);
+            window.removeEventListener('resize', handleResize);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
+            clearTimeout(resizeTimeout);
         };
     }, [count, speed]);
 
-    return <canvas ref={canvasRef} className="effects-canvas" />;
-};
+    return <canvas ref={canvasRef} className="effects-canvas" style={{ pointerEvents: 'none' }} />;
+});
 
 export default SnowEffect;

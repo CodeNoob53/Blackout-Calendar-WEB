@@ -68,7 +68,7 @@ const App: React.FC = () => {
       if (!cachedData) {
         wakeUpTimer = setTimeout(() => {
           setIsWakingUp(true);
-        }, 2000);
+        }, 800);
       }
 
       try {
