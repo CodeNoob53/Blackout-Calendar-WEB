@@ -243,9 +243,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       setPushSubscription(subscription);
       setIsPushEnabled(true);
 
+      // Update queue if user has already selected one
       const notificationTypes = ['all'];
       if (subscription.endpoint && currentQueueData) {
-        await updateNotificationQueue(subscription.endpoint, currentQueueData.queue, notificationTypes);
+        try {
+          await updateNotificationQueue(subscription.endpoint, currentQueueData.queue, notificationTypes);
+        } catch (error) {
+          console.error('Failed to update queue initially, will retry on queue change:', error);
+        }
       }
 
       console.log('Successfully subscribed to push notifications');
@@ -359,13 +364,34 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
   useEffect(() => {
     if (pushSubscription && currentQueueData) {
-      updateNotificationQueue(
-        pushSubscription.endpoint,
-        currentQueueData.queue,
-        ['all']
-      ).catch(error => {
-        console.error('Failed to update queue on backend:', error);
-      });
+      // Add small delay to ensure subscription is saved in DB first
+      const timeoutId = setTimeout(async () => {
+        try {
+          await updateNotificationQueue(
+            pushSubscription.endpoint,
+            currentQueueData.queue,
+            ['all']
+          );
+        } catch (error: any) {
+          console.warn('Failed to update queue initially, attempting to resync subscription...', error);
+
+          // Fallback: If 404 (subscription missing on backend), try to re-subscribe
+          try {
+            // Re-run the subscription flow to register on backend
+            await subscribeToPush();
+            // Try updating queue again
+            await updateNotificationQueue(
+              pushSubscription.endpoint,
+              currentQueueData.queue,
+              ['all']
+            );
+          } catch (retryError) {
+            console.error('Failed to recover subscription/queue update:', retryError);
+          }
+        }
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
     }
   }, [currentQueueData, pushSubscription]);
 
