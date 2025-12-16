@@ -5,6 +5,41 @@ const ASSETS_TO_CACHE = [
   '/manifest.json'
 ];
 
+// Simple logger for Service Worker
+const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 };
+let SW_LOG_LEVEL = LOG_LEVELS.warn; // Production: only warn and error
+
+const swLogger = {
+  debug: (msg, ...args) => {
+    if (LOG_LEVELS.debug >= SW_LOG_LEVEL) {
+      console.log(`[SW] ${msg}`, ...args);
+    }
+  },
+  info: (msg, ...args) => {
+    if (LOG_LEVELS.info >= SW_LOG_LEVEL) {
+      console.log(`[SW] ${msg}`, ...args);
+    }
+  },
+  warn: (msg, ...args) => {
+    if (LOG_LEVELS.warn >= SW_LOG_LEVEL) {
+      console.warn(`[SW] ${msg}`, ...args);
+    }
+  },
+  error: (msg, ...args) => {
+    if (LOG_LEVELS.error >= SW_LOG_LEVEL) {
+      console.error(`[SW] ${msg}`, ...args);
+    }
+  }
+};
+
+// Allow changing log level: call setSwLogLevel('debug') in console
+self.setSwLogLevel = (level) => {
+  if (LOG_LEVELS[level] !== undefined) {
+    SW_LOG_LEVEL = LOG_LEVELS[level];
+    console.log(`[SW] Log level changed to: ${level}`);
+  }
+};
+
 // Install event - Cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -86,7 +121,7 @@ async function getSilentMode() {
     db.close();
     return silentMode;
   } catch (e) {
-    console.error('Failed to get silent mode:', e);
+    swLogger.error('Failed to get silent mode:', e);
     return false;
   }
 }
@@ -119,7 +154,7 @@ async function saveNotificationToHistory(notification) {
     db.close();
     return true;
   } catch (e) {
-    console.error('[SW] Failed to save notification to IndexedDB:', e);
+    swLogger.error('Failed to save notification to IndexedDB:', e);
     return false;
   }
 }
@@ -137,7 +172,7 @@ self.addEventListener('push', (event) => {
     try {
       data = event.data.json();
     } catch (e) {
-      console.error('Failed to parse push data, falling back to text:', e);
+      swLogger.error('Failed to parse push data, falling back to text:', e);
       const text = event.data.text();
       if (text) {
         data.body = text;
@@ -147,7 +182,7 @@ self.addEventListener('push', (event) => {
 
   event.waitUntil(
     (async () => {
-      console.log('[SW] Push received:', data);
+      swLogger.debug('[SW] Push received:', data);
 
       const silentMode = await getSilentMode();
 
@@ -159,18 +194,18 @@ self.addEventListener('push', (event) => {
           type: data.data?.type || 'info',
           timestamp: new Date().toISOString()
         });
-        console.log('[SW] Notification saved to history');
+        swLogger.debug('[SW] Notification saved to history');
       } catch (error) {
-        console.error('[SW] Failed to save notification to history:', error);
+        swLogger.error('[SW] Failed to save notification to history:', error);
       }
 
       // Надсилати повідомлення до UI якщо є відкриті вкладки
       const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      console.log(`[SW] Found ${clients.length} open clients`);
+      swLogger.debug(`[SW] Found ${clients.length} open clients`);
 
       if (clients.length > 0) {
         clients.forEach((client) => {
-          console.log(`[SW] Sending message to client: ${client.url}`);
+          swLogger.debug(`[SW] Sending message to client: ${client.url}`);
           client.postMessage({
             type: 'PUSH_NOTIFICATION',
             notification: {
@@ -181,7 +216,7 @@ self.addEventListener('push', (event) => {
           });
         });
       } else {
-        console.log('[SW] No open clients, notification saved to history only');
+        swLogger.debug('[SW] No open clients, notification saved to history only');
       }
 
       // Показати системне сповіщення ТІЛЬКИ якщо НЕ silent mode
@@ -203,10 +238,10 @@ self.addEventListener('push', (event) => {
           silent: false
         };
 
-        console.log('[SW] Showing notification with tag:', data.tag);
+        swLogger.debug('[SW] Showing notification with tag:', data.tag);
         await self.registration.showNotification(data.title, options);
       } else {
-        console.log('[SW] Silent mode enabled, skipping system notification');
+        swLogger.debug('[SW] Silent mode enabled, skipping system notification');
       }
     })()
   );

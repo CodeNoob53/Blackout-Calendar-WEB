@@ -11,6 +11,7 @@ import {
   updateNotificationQueue
 } from '../../services/api';
 import { timeToMinutes } from '../../utils/timeHelper';
+import { logger } from '../../utils/logger';
 
 interface NotificationCenterProps {
   currentQueueData?: QueueData;
@@ -95,11 +96,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     // Слухати повідомлення від Service Worker
     if ('serviceWorker' in navigator) {
       const messageHandler = (event: MessageEvent) => {
-        console.log('[NotificationCenter] Received message from SW:', event.data);
+        logger.debug('[NotificationCenter] Received message from SW:', event.data);
 
         if (event.data && event.data.type === 'PUSH_NOTIFICATION') {
           const { notification } = event.data;
-          console.log('[NotificationCenter] Processing PUSH_NOTIFICATION:', notification);
+          logger.debug('[NotificationCenter] Processing PUSH_NOTIFICATION:', notification);
 
           // Для аварійних ситуацій показуємо системний alert або модальне вікно (тут поки alert для надійності)
           // Backend sends 'emergency_blackout' for sendEmergencyNotification
@@ -116,12 +117,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             type: isEmergency ? 'warning' : (notification.type as 'info' | 'warning' | 'success')
           });
 
-          console.log('[NotificationCenter] Notification added to list');
+          logger.debug('[NotificationCenter] Notification added to list');
         }
 
         // Open notifications panel when user clicks system notification
         if (event.data && event.data.type === 'OPEN_NOTIFICATIONS_PANEL') {
-          console.log('[NotificationCenter] Opening notifications panel');
+          logger.debug('[NotificationCenter] Opening notifications panel');
           setIsOpen(true);
           setActiveTab('notifications');
         }
@@ -152,10 +153,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         const saved = localStorage.getItem('notifications_history');
         if (saved) {
           localStorageNotifications = JSON.parse(saved);
-          console.log(`Loaded ${localStorageNotifications.length} notifications from localStorage`);
+          logger.debug(`Loaded ${localStorageNotifications.length} notifications from localStorage`);
         }
       } catch (e) {
-        console.error('Failed to load from localStorage:', e);
+        logger.error('Failed to load from localStorage:', e);
       }
 
       // Load from IndexedDB
@@ -193,7 +194,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         read: true // Mark as read since they're from history
       }));
 
-      console.log(`Loaded ${convertedNotifications.length} notifications from IndexedDB`);
+      logger.debug(`Loaded ${convertedNotifications.length} notifications from IndexedDB`);
 
       // Merge localStorage + IndexedDB
       const merged = [...localStorageNotifications, ...convertedNotifications];
@@ -213,9 +214,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       ).slice(0, 50);
 
       setNotifications(sorted);
-      console.log(`Total unique notifications: ${sorted.length}`);
+      logger.debug(`Total unique notifications: ${sorted.length}`);
     } catch (error) {
-      console.error('Failed to load notifications from IndexedDB:', error);
+      logger.error('Failed to load notifications from IndexedDB:', error);
 
       // Fallback to localStorage only if IndexedDB fails
       try {
@@ -224,14 +225,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           setNotifications(JSON.parse(saved));
         }
       } catch (e) {
-        console.error('Failed to load from localStorage fallback:', e);
+        logger.error('Failed to load from localStorage fallback:', e);
       }
     }
   };
 
   const checkPushSubscription = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.log('Push notifications not supported');
+      logger.info('Push notifications not supported');
       return;
     }
 
@@ -245,7 +246,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         // Verification will be done in useEffect when currentQueueData is available
       }
     } catch (error) {
-      console.error('Failed to check push subscription:', error);
+      logger.error('Failed to check push subscription:', error);
     }
   };
 
@@ -289,7 +290,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
         db.close();
       } catch (error) {
-        console.error('Failed to save silent mode to IndexedDB:', error);
+        logger.error('Failed to save silent mode to IndexedDB:', error);
       }
     };
 
@@ -319,13 +320,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         sendSystemNotification('Сповіщення увімкнено!', 'Тепер ви будете отримувати важливі нагадування.');
       }
     } catch (e) {
-      console.error(e);
+      logger.error(e);
     }
   };
 
   const subscribeToPush = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.log('Push notifications not supported');
+      logger.debug('Push notifications not supported');
       return;
     }
 
@@ -350,11 +351,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         try {
           await updateNotificationQueue(subscription.endpoint, currentQueueData.queue, notificationTypes);
         } catch (error) {
-          console.error('Failed to update queue initially, will retry on queue change:', error);
+          logger.error('Failed to update queue initially, will retry on queue change:', error);
         }
       }
 
-      console.log('Successfully subscribed to push notifications');
+      logger.debug('Successfully subscribed to push notifications');
 
       addNotification({
         title: '✅ Підписка активована',
@@ -362,25 +363,25 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         type: 'success'
       });
     } catch (error) {
-      console.error('Failed to subscribe to push notifications:', error);
+      logger.error('Failed to subscribe to push notifications:', error);
       setIsPushEnabled(false);
     }
   };
 
   const unsubscribeToPush = async () => {
     if (!pushSubscription) {
-      console.warn('No push subscription to unsubscribe from');
+      logger.warn('No push subscription to unsubscribe from');
       return;
     }
 
     try {
       // 1. Unsubscribe from browser's PushManager
       await pushSubscription.unsubscribe();
-      console.log('Unsubscribed from browser PushManager');
+      logger.debug('Unsubscribed from browser PushManager');
 
       // 2. Remove subscription from backend
       await unsubscribeFromPushNotifications(pushSubscription.endpoint);
-      console.log('Removed subscription from backend');
+      logger.debug('Removed subscription from backend');
 
       // 3. Update local state
       setPushSubscription(null);
@@ -391,7 +392,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         checkPushSubscription();
       }, 500);
 
-      console.log('Successfully unsubscribed from push notifications');
+      logger.debug('Successfully unsubscribed from push notifications');
 
       addNotification({
         title: '🔕 Підписка вимкнена',
@@ -399,7 +400,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         type: 'info'
       });
     } catch (error) {
-      console.error('Failed to unsubscribe from push notifications:', error);
+      logger.error('Failed to unsubscribe from push notifications:', error);
 
       // Even if backend call fails, still update local state
       setPushSubscription(null);
@@ -434,7 +435,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           });
         }
       } catch (e) {
-        console.error("Notification error", e);
+        logger.error("Notification error", e);
       }
     }
   };
@@ -499,14 +500,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       const verifySubscription = async () => {
         try {
           await updateNotificationQueue(pushSubscription.endpoint, currentQueueData.queue, ['all']);
-          console.log('Subscription verified on backend');
+          logger.debug('Subscription verified on backend');
         } catch (error: any) {
           if (error.message?.includes('404') || error.message?.includes('not found')) {
-            console.warn('Subscription lost on backend (DB reset?), auto-restoring...');
+            logger.warn('Subscription lost on backend (DB reset?), auto-restoring...');
             try {
               await subscribeToPushNotifications(pushSubscription);
               await updateNotificationQueue(pushSubscription.endpoint, currentQueueData.queue, ['all']);
-              console.log('✅ Subscription auto-restored successfully!');
+              logger.debug('✅ Subscription auto-restored successfully!');
 
               addNotification({
                 title: '🔄 Підписка відновлена',
@@ -514,7 +515,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 type: 'success'
               });
             } catch (restoreError) {
-              console.error('Failed to auto-restore subscription:', restoreError);
+              logger.error('Failed to auto-restore subscription:', restoreError);
             }
           }
         }
@@ -537,16 +538,16 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             currentQueueData.queue,
             ['all']
           );
-          console.log('Queue updated successfully');
+          logger.debug('Queue updated successfully');
         } catch (error: any) {
-          console.warn('Failed to update queue, subscription might be missing on backend. Attempting to re-sync...', error);
+          logger.warn('Failed to update queue, subscription might be missing on backend. Attempting to re-sync...', error);
 
           // If 404 - subscription not found, re-register it on backend
           if (error.message?.includes('404') || error.message?.includes('not found')) {
             try {
               // Re-subscribe to backend
               await subscribeToPushNotifications(pushSubscription);
-              console.log('Re-subscribed to backend successfully');
+              logger.debug('Re-subscribed to backend successfully');
 
               // Now try updating queue again after a small delay
               setTimeout(async () => {
@@ -556,13 +557,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                     currentQueueData.queue,
                     ['all']
                   );
-                  console.log('Queue updated successfully after re-subscription');
+                  logger.debug('Queue updated successfully after re-subscription');
                 } catch (finalError) {
-                  console.error('Failed to update queue even after re-subscription:', finalError);
+                  logger.error('Failed to update queue even after re-subscription:', finalError);
                 }
               }, 1000);
             } catch (resubError) {
-              console.error('Failed to re-subscribe:', resubError);
+              logger.error('Failed to re-subscribe:', resubError);
             }
           } else {
             // For other errors, just retry once after 2s
@@ -573,9 +574,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   currentQueueData.queue,
                   ['all']
                 );
-                console.log('Queue updated successfully on retry');
+                logger.debug('Queue updated successfully on retry');
               } catch (retryError) {
-                console.error('Failed to update queue after retry:', retryError);
+                logger.error('Failed to update queue after retry:', retryError);
               }
             }, 2000);
           }
@@ -671,7 +672,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             }
           }
         } catch (e) {
-          console.error("Failed to check new schedules", e);
+          logger.error("Failed to check new schedules", e);
         }
       }
 
@@ -694,7 +695,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             }
           }
         } catch (e) {
-          console.error("Failed to check changed schedules", e);
+          logger.error("Failed to check changed schedules", e);
         }
       }
     };
