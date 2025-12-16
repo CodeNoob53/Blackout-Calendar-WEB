@@ -91,6 +91,39 @@ async function getSilentMode() {
   }
 }
 
+// Helper to save notification to history
+async function saveNotificationToHistory(notification) {
+  try {
+    const db = await new Promise((resolve, reject) => {
+      const request = indexedDB.open('NotificationHistory', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains('notifications')) {
+          const store = db.createObjectStore('notifications', { keyPath: 'id', autoIncrement: true });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+      };
+    });
+
+    const tx = db.transaction('notifications', 'readwrite');
+    const store = tx.objectStore('notifications');
+
+    await new Promise((resolve, reject) => {
+      const request = store.add(notification);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+
+    db.close();
+    return true;
+  } catch (e) {
+    console.error('[SW] Failed to save notification to IndexedDB:', e);
+    return false;
+  }
+}
+
 // Push event - Handle incoming push notifications
 self.addEventListener('push', (event) => {
   let data = {
@@ -118,18 +151,35 @@ self.addEventListener('push', (event) => {
 
       const silentMode = await getSilentMode();
 
-      // Завжди надсилати повідомлення до UI
-      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
-      clients.forEach((client) => {
-        client.postMessage({
-          type: 'PUSH_NOTIFICATION',
-          notification: {
-            title: data.title,
-            message: data.body,
-            type: data.data?.type || 'info'
-          }
+      // Зберегти повідомлення в IndexedDB для історії
+      try {
+        await saveNotificationToHistory({
+          title: data.title,
+          message: data.body,
+          type: data.data?.type || 'info',
+          timestamp: new Date().toISOString()
         });
-      });
+        console.log('[SW] Notification saved to history');
+      } catch (error) {
+        console.error('[SW] Failed to save notification to history:', error);
+      }
+
+      // Надсилати повідомлення до UI якщо є відкриті вкладки
+      const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      if (clients.length > 0) {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: 'PUSH_NOTIFICATION',
+            notification: {
+              title: data.title,
+              message: data.body,
+              type: data.data?.type || 'info'
+            }
+          });
+        });
+      } else {
+        console.log('[SW] No open clients, notification saved to history only');
+      }
 
       // Показати системне сповіщення ТІЛЬКИ якщо НЕ silent mode
       if (!silentMode) {

@@ -97,6 +97,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       setPermission(Notification.permission);
     }
     checkPushSubscription();
+    loadNotificationsFromIndexedDB();
 
     // Слухати повідомлення від Service Worker
     if ('serviceWorker' in navigator) {
@@ -128,6 +129,55 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       };
     }
   }, []);
+
+  const loadNotificationsFromIndexedDB = async () => {
+    try {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open('NotificationHistory', 1);
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result);
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
+          if (!db.objectStoreNames.contains('notifications')) {
+            const store = db.createObjectStore('notifications', { keyPath: 'id', autoIncrement: true });
+            store.createIndex('timestamp', 'timestamp', { unique: false });
+          }
+        };
+      });
+
+      const tx = db.transaction('notifications', 'readonly');
+      const store = tx.objectStore('notifications');
+      const allNotifications = await new Promise<any[]>((resolve) => {
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => resolve([]);
+      });
+
+      db.close();
+
+      // Merge with existing notifications from localStorage
+      if (allNotifications.length > 0) {
+        setNotifications((prev) => {
+          const merged = [...allNotifications, ...prev];
+          // Remove duplicates and sort by timestamp
+          const unique = merged.filter((notif, index, self) =>
+            index === self.findIndex((n) =>
+              n.title === notif.title &&
+              n.message === notif.message &&
+              Math.abs(new Date(n.timestamp).getTime() - new Date(notif.timestamp).getTime()) < 1000
+            )
+          );
+          return unique.sort((a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+          ).slice(0, 50); // Keep only last 50
+        });
+
+        console.log(`Loaded ${allNotifications.length} notifications from IndexedDB`);
+      }
+    } catch (error) {
+      console.error('Failed to load notifications from IndexedDB:', error);
+    }
+  };
 
   const checkPushSubscription = async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
