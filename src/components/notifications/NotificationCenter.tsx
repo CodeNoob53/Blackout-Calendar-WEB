@@ -102,8 +102,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     // Слухати повідомлення від Service Worker
     if ('serviceWorker' in navigator) {
       const messageHandler = (event: MessageEvent) => {
+        console.log('[NotificationCenter] Received message from SW:', event.data);
+
         if (event.data && event.data.type === 'PUSH_NOTIFICATION') {
           const { notification } = event.data;
+          console.log('[NotificationCenter] Processing PUSH_NOTIFICATION:', notification);
 
           // Для аварійних ситуацій показуємо системний alert або модальне вікно (тут поки alert для надійності)
           // Backend sends 'emergency_blackout' for sendEmergencyNotification
@@ -119,10 +122,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             message: notification.message,
             type: isEmergency ? 'warning' : (notification.type as 'info' | 'warning' | 'success')
           });
+
+          console.log('[NotificationCenter] Notification added to list');
         }
 
         // Open notifications panel when user clicks system notification
         if (event.data && event.data.type === 'OPEN_NOTIFICATIONS_PANEL') {
+          console.log('[NotificationCenter] Opening notifications panel');
           setIsOpen(true);
           setActiveTab('notifications');
         }

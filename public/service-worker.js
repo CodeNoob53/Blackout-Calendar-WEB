@@ -166,8 +166,11 @@ self.addEventListener('push', (event) => {
 
       // Надсилати повідомлення до UI якщо є відкриті вкладки
       const clients = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      console.log(`[SW] Found ${clients.length} open clients`);
+
       if (clients.length > 0) {
         clients.forEach((client) => {
+          console.log(`[SW] Sending message to client: ${client.url}`);
           client.postMessage({
             type: 'PUSH_NOTIFICATION',
             notification: {
