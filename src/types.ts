@@ -61,9 +61,10 @@ export interface NotificationItem {
   id: string;
   title: string;
   message: string;
-  date: number; // timestamp
+  date: number; // timestamp in milliseconds
   read: boolean;
   type: 'info' | 'warning' | 'success';
+  timestamp?: string; // ISO timestamp from IndexedDB (optional for backward compatibility)
 }
 
 // Update API Types

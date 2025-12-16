@@ -41,14 +41,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     }
   });
 
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('notifications_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 
   const buttonRef = useRef<HTMLButtonElement>(null);
   const [position, setPosition] = useState({ top: 0, right: 0 });
@@ -153,6 +146,19 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
   const loadNotificationsFromIndexedDB = async () => {
     try {
+      // Load from localStorage first
+      let localStorageNotifications: NotificationItem[] = [];
+      try {
+        const saved = localStorage.getItem('notifications_history');
+        if (saved) {
+          localStorageNotifications = JSON.parse(saved);
+          console.log(`Loaded ${localStorageNotifications.length} notifications from localStorage`);
+        }
+      } catch (e) {
+        console.error('Failed to load from localStorage:', e);
+      }
+
+      // Load from IndexedDB
       const db = await new Promise<IDBDatabase>((resolve, reject) => {
         const request = indexedDB.open('NotificationHistory', 1);
         request.onerror = () => reject(request.error);
@@ -176,27 +182,50 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
       db.close();
 
-      // Merge with existing notifications from localStorage
-      if (allNotifications.length > 0) {
-        setNotifications((prev) => {
-          const merged = [...allNotifications, ...prev];
-          // Remove duplicates and sort by timestamp
-          const unique = merged.filter((notif, index, self) =>
-            index === self.findIndex((n) =>
-              n.title === notif.title &&
-              n.message === notif.message &&
-              Math.abs(new Date(n.timestamp).getTime() - new Date(notif.timestamp).getTime()) < 1000
-            )
-          );
-          return unique.sort((a, b) =>
-            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
-          ).slice(0, 50); // Keep only last 50
-        });
+      // Convert IndexedDB format to NotificationItem format
+      const convertedNotifications: NotificationItem[] = allNotifications.map((notif) => ({
+        id: notif.id?.toString() || `idb-${Date.now()}-${Math.random()}`,
+        title: notif.title,
+        message: notif.message,
+        type: notif.type || 'info',
+        date: new Date(notif.timestamp).getTime(),
+        timestamp: notif.timestamp,
+        read: true // Mark as read since they're from history
+      }));
 
-        console.log(`Loaded ${allNotifications.length} notifications from IndexedDB`);
-      }
+      console.log(`Loaded ${convertedNotifications.length} notifications from IndexedDB`);
+
+      // Merge localStorage + IndexedDB
+      const merged = [...localStorageNotifications, ...convertedNotifications];
+
+      // Remove duplicates based on title, message, and timestamp
+      const unique = merged.filter((notif, index, self) =>
+        index === self.findIndex((n) =>
+          n.title === notif.title &&
+          n.message === notif.message &&
+          Math.abs(new Date(n.timestamp || n.date).getTime() - new Date(notif.timestamp || notif.date).getTime()) < 1000
+        )
+      );
+
+      // Sort by date (newest first) and keep only last 50
+      const sorted = unique.sort((a, b) =>
+        new Date(b.timestamp || b.date).getTime() - new Date(a.timestamp || a.date).getTime()
+      ).slice(0, 50);
+
+      setNotifications(sorted);
+      console.log(`Total unique notifications: ${sorted.length}`);
     } catch (error) {
       console.error('Failed to load notifications from IndexedDB:', error);
+
+      // Fallback to localStorage only if IndexedDB fails
+      try {
+        const saved = localStorage.getItem('notifications_history');
+        if (saved) {
+          setNotifications(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.error('Failed to load from localStorage fallback:', e);
+      }
     }
   };
 
