@@ -255,6 +255,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       }
 
       console.log('Successfully subscribed to push notifications');
+
+      addNotification({
+        title: '✅ Підписка активована',
+        message: 'Ви отримуватимете сповіщення про відключення світла',
+        type: 'success'
+      });
     } catch (error) {
       console.error('Failed to subscribe to push notifications:', error);
       setIsPushEnabled(false);
@@ -262,18 +268,42 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   };
 
   const unsubscribeToPush = async () => {
-    if (!pushSubscription) return;
+    if (!pushSubscription) {
+      console.warn('No push subscription to unsubscribe from');
+      return;
+    }
 
     try {
+      // 1. Unsubscribe from browser's PushManager
       await pushSubscription.unsubscribe();
-      await unsubscribeFromPushNotifications(pushSubscription.endpoint);
+      console.log('Unsubscribed from browser PushManager');
 
+      // 2. Remove subscription from backend
+      await unsubscribeFromPushNotifications(pushSubscription.endpoint);
+      console.log('Removed subscription from backend');
+
+      // 3. Update local state
       setPushSubscription(null);
       setIsPushEnabled(false);
 
+      // 4. Force re-check to ensure UI is in sync
+      setTimeout(() => {
+        checkPushSubscription();
+      }, 500);
+
       console.log('Successfully unsubscribed from push notifications');
+
+      addNotification({
+        title: '🔕 Підписка вимкнена',
+        message: 'Ви більше не отримуватимете push-сповіщення',
+        type: 'info'
+      });
     } catch (error) {
       console.error('Failed to unsubscribe from push notifications:', error);
+
+      // Even if backend call fails, still update local state
+      setPushSubscription(null);
+      setIsPushEnabled(false);
     }
   };
 
