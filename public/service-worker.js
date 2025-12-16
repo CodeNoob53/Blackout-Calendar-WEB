@@ -185,13 +185,19 @@ self.addEventListener('push', (event) => {
       if (!silentMode) {
         const options = {
           body: data.body,
-          icon: data.icon || 'https://img.icons8.com/?size=192&id=TMhsmDzqlwEO&format=png&color=000000',
-          badge: 'https://img.icons8.com/?size=96&id=TMhsmDzqlwEO&format=png&color=000000',
+          icon: data.icon || '/icon-192x192.png',
+          badge: '/icon-192x192.png',
           vibrate: [200, 100, 200],
-          data: data.data,
+          data: {
+            ...data.data,
+            url: '/?notifications=open' // Open notifications panel on click
+          },
           requireInteraction: false,
-          tag: data.tag || 'notification-default', // Fallback to avoid error with renotify: true
-          renotify: data.renotify
+          tag: data.tag || `notification-${Date.now()}`,
+          renotify: data.renotify,
+          // Better styling for Android
+          timestamp: Date.now(),
+          silent: false
         };
 
         console.log('[SW] Showing notification with tag:', data.tag);
@@ -207,17 +213,22 @@ self.addEventListener('push', (event) => {
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
-  const urlToOpen = event.notification.data?.url || '/';
+  const urlToOpen = event.notification.data?.url || '/?notifications=open';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // Check if there's already a window open
-      for (const client of clientList) {
-        if (client.url === self.registration.scope + urlToOpen.substring(1) && 'focus' in client) {
-          return client.focus();
-        }
+      if (clientList.length > 0) {
+        // Focus existing window and send message to open notifications
+        const client = clientList[0];
+        client.focus();
+        client.postMessage({
+          type: 'OPEN_NOTIFICATIONS_PANEL'
+        });
+        return;
       }
-      // Otherwise, open a new window
+
+      // Otherwise, open a new window with notifications panel open
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }

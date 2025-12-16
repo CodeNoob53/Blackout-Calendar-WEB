@@ -120,6 +120,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             type: isEmergency ? 'warning' : (notification.type as 'info' | 'warning' | 'success')
           });
         }
+
+        // Open notifications panel when user clicks system notification
+        if (event.data && event.data.type === 'OPEN_NOTIFICATIONS_PANEL') {
+          setIsOpen(true);
+          setActiveTab('notifications');
+        }
       };
 
       navigator.serviceWorker.addEventListener('message', messageHandler);
@@ -127,6 +133,15 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       return () => {
         navigator.serviceWorker.removeEventListener('message', messageHandler);
       };
+    }
+
+    // Check URL parameter to auto-open notifications
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('notifications') === 'open') {
+      setTimeout(() => {
+        setIsOpen(true);
+        setActiveTab('notifications');
+      }, 500);
     }
   }, []);
 
