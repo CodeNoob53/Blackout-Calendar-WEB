@@ -142,6 +142,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       if (subscription) {
         setPushSubscription(subscription);
         setIsPushEnabled(true);
+        // Verification will be done in useEffect when currentQueueData is available
       }
     } catch (error) {
       console.error('Failed to check push subscription:', error);
@@ -362,6 +363,39 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     return () => clearInterval(checkInterval);
   }, [settings.lightAlerts, settings.nightMode, currentQueueData, isToday]);
 
+  // Verify and restore subscription when currentQueueData becomes available
+  useEffect(() => {
+    if (pushSubscription && currentQueueData && isPushEnabled) {
+      const verifySubscription = async () => {
+        try {
+          await updateNotificationQueue(pushSubscription.endpoint, currentQueueData.queue, ['all']);
+          console.log('Subscription verified on backend');
+        } catch (error: any) {
+          if (error.message?.includes('404') || error.message?.includes('not found')) {
+            console.warn('Subscription lost on backend (DB reset?), auto-restoring...');
+            try {
+              await subscribeToPushNotifications(pushSubscription);
+              await updateNotificationQueue(pushSubscription.endpoint, currentQueueData.queue, ['all']);
+              console.log('✅ Subscription auto-restored successfully!');
+
+              addNotification({
+                title: '🔄 Підписка відновлена',
+                message: 'Сповіщення про відключення світла знову працюють',
+                type: 'success'
+              });
+            } catch (restoreError) {
+              console.error('Failed to auto-restore subscription:', restoreError);
+            }
+          }
+        }
+      };
+
+      // Run verification after a short delay
+      const timeoutId = setTimeout(verifySubscription, 1000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [currentQueueData, pushSubscription, isPushEnabled]);
+
   useEffect(() => {
     if (pushSubscription && currentQueueData) {
       // Add delay to ensure subscription is saved in DB first
@@ -373,22 +407,48 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
             currentQueueData.queue,
             ['all']
           );
+          console.log('Queue updated successfully');
         } catch (error: any) {
-          console.warn('Failed to update queue initially, will retry in 2s...', error);
+          console.warn('Failed to update queue, subscription might be missing on backend. Attempting to re-sync...', error);
 
-          // Retry after another 2 seconds
-          setTimeout(async () => {
+          // If 404 - subscription not found, re-register it on backend
+          if (error.message?.includes('404') || error.message?.includes('not found')) {
             try {
-              await updateNotificationQueue(
-                pushSubscription.endpoint,
-                currentQueueData.queue,
-                ['all']
-              );
-              console.log('Queue updated successfully on retry');
-            } catch (retryError) {
-              console.error('Failed to update queue after retry:', retryError);
+              // Re-subscribe to backend
+              await subscribeToPushNotifications(pushSubscription);
+              console.log('Re-subscribed to backend successfully');
+
+              // Now try updating queue again after a small delay
+              setTimeout(async () => {
+                try {
+                  await updateNotificationQueue(
+                    pushSubscription.endpoint,
+                    currentQueueData.queue,
+                    ['all']
+                  );
+                  console.log('Queue updated successfully after re-subscription');
+                } catch (finalError) {
+                  console.error('Failed to update queue even after re-subscription:', finalError);
+                }
+              }, 1000);
+            } catch (resubError) {
+              console.error('Failed to re-subscribe:', resubError);
             }
-          }, 2000);
+          } else {
+            // For other errors, just retry once after 2s
+            setTimeout(async () => {
+              try {
+                await updateNotificationQueue(
+                  pushSubscription.endpoint,
+                  currentQueueData.queue,
+                  ['all']
+                );
+                console.log('Queue updated successfully on retry');
+              } catch (retryError) {
+                console.error('Failed to update queue after retry:', retryError);
+              }
+            }, 2000);
+          }
         }
       }, 2000);
 
