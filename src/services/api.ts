@@ -160,11 +160,25 @@ export const getVapidPublicKey = async (): Promise<string> => {
   return data.publicKey;
 };
 
-export const subscribeToPushNotifications = async (subscription: PushSubscription): Promise<boolean> => {
+export const subscribeToPushNotifications = async (
+  subscription: PushSubscription,
+  queue?: string | null,
+  notificationTypes?: string[]
+): Promise<boolean> => {
+  const payload: any = subscription.toJSON();
+
+  // Add optional queue and notificationTypes
+  if (queue !== undefined && queue !== null) {
+    payload.queue = queue;
+  }
+  if (notificationTypes !== undefined) {
+    payload.notificationTypes = notificationTypes;
+  }
+
   const response = await fetch(`${BASE_URL}/notifications/subscribe`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(subscription.toJSON())
+    body: JSON.stringify(payload)
   });
 
   if (!response.ok) throw new Error('Failed to subscribe to push notifications');

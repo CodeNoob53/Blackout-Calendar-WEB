@@ -340,20 +340,16 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         applicationServerKey: urlBase64ToUint8Array(publicKey) as any
       });
 
-      await subscribeToPushNotifications(subscription);
+      // Subscribe with queue if already selected
+      const notificationTypes = ['all'];
+      await subscribeToPushNotifications(
+        subscription,
+        currentQueueData?.queue,
+        notificationTypes
+      );
 
       setPushSubscription(subscription);
       setIsPushEnabled(true);
-
-      // Update queue if user has already selected one
-      const notificationTypes = ['all'];
-      if (subscription.endpoint && currentQueueData) {
-        try {
-          await updateNotificationQueue(subscription.endpoint, currentQueueData.queue, notificationTypes);
-        } catch (error) {
-          logger.error('Failed to update queue initially, will retry on queue change:', error);
-        }
-      }
 
       logger.debug('Successfully subscribed to push notifications');
 
@@ -505,8 +501,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           if (error.message?.includes('404') || error.message?.includes('not found')) {
             logger.warn('Subscription lost on backend (DB reset?), auto-restoring...');
             try {
-              await subscribeToPushNotifications(pushSubscription);
-              await updateNotificationQueue(pushSubscription.endpoint, currentQueueData.queue, ['all']);
+              await subscribeToPushNotifications(pushSubscription, currentQueueData.queue, ['all']);
               logger.debug('✅ Subscription auto-restored successfully!');
 
               addNotification({
@@ -545,25 +540,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           // If 404 - subscription not found, re-register it on backend
           if (error.message?.includes('404') || error.message?.includes('not found')) {
             try {
-              // Re-subscribe to backend
-              await subscribeToPushNotifications(pushSubscription);
-              logger.debug('Re-subscribed to backend successfully');
-
-              // Now try updating queue again after a small delay
-              setTimeout(async () => {
-                try {
-                  await updateNotificationQueue(
-                    pushSubscription.endpoint,
-                    currentQueueData.queue,
-                    ['all']
-                  );
-                  logger.debug('Queue updated successfully after re-subscription');
-                } catch (finalError) {
-                  logger.error('Failed to update queue even after re-subscription:', finalError);
-                }
-              }, 1000);
-            } catch (resubError) {
-              logger.error('Failed to re-subscribe:', resubError);
+              // Re-subscribe to backend with queue in single atomic call
+              await subscribeToPushNotifications(pushSubscription, currentQueueData.queue, ['all']);
+              logger.debug('Re-subscribed to backend successfully with queue');
+            } catch (finalError) {
+              logger.error('Failed to re-subscribe to backend:', finalError);
             }
           } else {
             // For other errors, just retry once after 2s
