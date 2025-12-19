@@ -209,7 +209,13 @@ export const updateNotificationQueue = async (
     body: JSON.stringify({ endpoint, queue, notificationTypes })
   });
 
-  if (!response.ok) throw new Error('Failed to update notification queue');
+  if (!response.ok) {
+    // Include status code in error message for better error handling
+    if (response.status === 404) {
+      throw new Error('Subscription not found (404)');
+    }
+    throw new Error(`Failed to update notification queue (${response.status})`);
+  }
   const data = await response.json();
   return data.success;
 };
