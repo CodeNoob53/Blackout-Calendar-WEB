@@ -259,13 +259,16 @@ self.addEventListener('push', (event) => {
 
       const silentMode = await getSilentMode();
 
+      // Create timestamp once for consistency
+      const timestamp = new Date().toISOString();
+
       // Зберегти повідомлення в IndexedDB для історії
       try {
         await saveNotificationToHistory({
           title: data.title,
           message: data.body,
           type: data.data?.type || 'info',
-          timestamp: new Date().toISOString()
+          timestamp: timestamp
         });
         swLogger.debug('[SW] Notification saved to history');
       } catch (error) {
@@ -284,7 +287,8 @@ self.addEventListener('push', (event) => {
             notification: {
               title: data.title,
               message: data.body,
-              type: data.data?.type || 'info'
+              type: data.data?.type || 'info',
+              timestamp: timestamp
             }
           });
         });

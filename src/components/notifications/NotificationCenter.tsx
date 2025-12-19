@@ -63,7 +63,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   const addNotification = (input: Omit<NotificationItem, 'id' | 'date' | 'read'>) => {
     const newItem: NotificationItem = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-      date: Date.now(),
+      date: input.timestamp ? new Date(input.timestamp).getTime() : Date.now(),
       read: false,
       ...input
     };
@@ -114,7 +114,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           addNotification({
             title: notification.title,
             message: notification.message,
-            type: isEmergency ? 'warning' : (notification.type as 'info' | 'warning' | 'success')
+            type: isEmergency ? 'warning' : (notification.type as 'info' | 'warning' | 'success'),
+            timestamp: notification.timestamp
           });
 
           logger.debug('[NotificationCenter] Notification added to list');
@@ -775,7 +776,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                               <h4 className="nc-title">{n.title}</h4>
                               <p className="nc-message">{n.message}</p>
                               <span className="nc-timestamp">
-                                {new Date(n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(n.timestamp || n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
 
