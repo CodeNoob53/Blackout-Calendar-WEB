@@ -159,6 +159,79 @@ async function saveNotificationToHistory(notification) {
   }
 }
 
+// Helper to build notification options based on type
+function getNotificationOptions(data) {
+  const notificationType = data.data?.type;
+  const url = data.data?.url || '/?notifications=open';
+
+  const baseOptions = {
+    body: data.body,
+    icon: data.icon || '/icon-192x192.png',
+    badge: '/icon-192x192.png',
+    vibrate: [200, 100, 200],
+    data: {
+      ...data.data,
+      url
+    },
+    tag: data.tag || `notification-${Date.now()}`,
+    renotify: data.renotify,
+    silent: false
+  };
+
+  // Configure based on notification type
+  if (notificationType === 'power_off_30min') {
+    // CRITICAL: User needs to prepare for power outage
+    return {
+      ...baseOptions,
+      requireInteraction: true, // Keep visible until user acts
+      actions: [
+        { action: 'view', title: 'Переглянути графік' },
+        { action: 'dismiss', title: 'Зрозуміло' }
+      ]
+    };
+  }
+
+  if (notificationType === 'emergency') {
+    // EMERGENCY: Important alert
+    return {
+      ...baseOptions,
+      requireInteraction: true, // Keep visible until user acts
+      actions: [
+        { action: 'view', title: 'Детальніше' },
+        { action: 'dismiss', title: 'Закрити' }
+      ]
+    };
+  }
+
+  if (notificationType === 'schedule_change') {
+    // Informational: Can auto-dismiss
+    return {
+      ...baseOptions,
+      requireInteraction: false,
+      actions: [
+        { action: 'view', title: 'Подивитись' }
+      ]
+    };
+  }
+
+  if (notificationType === 'power_on') {
+    // Helpful: Can auto-dismiss
+    return {
+      ...baseOptions,
+      requireInteraction: false,
+      actions: [
+        { action: 'dismiss', title: 'OK' }
+      ]
+    };
+  }
+
+  // Default: Standard notification
+  return {
+    ...baseOptions,
+    requireInteraction: false
+  };
+}
+
 // Push event - Handle incoming push notifications
 self.addEventListener('push', (event) => {
   let data = {
@@ -221,24 +294,15 @@ self.addEventListener('push', (event) => {
 
       // Показати системне сповіщення ТІЛЬКИ якщо НЕ silent mode
       if (!silentMode) {
-        const options = {
-          body: data.body,
-          icon: data.icon || '/icon-192x192.png',
-          badge: '/icon-192x192.png',
-          vibrate: [200, 100, 200],
-          data: {
-            ...data.data,
-            url: '/?notifications=open' // Open notifications panel on click
-          },
-          requireInteraction: false,
-          tag: data.tag || `notification-${Date.now()}`,
-          renotify: data.renotify,
-          // Better styling for Android
-          timestamp: Date.now(),
-          silent: false
-        };
+        const options = getNotificationOptions(data);
 
-        swLogger.debug('[SW] Showing notification with tag:', data.tag);
+        swLogger.debug('[SW] Showing notification:', {
+          type: data.data?.type,
+          tag: options.tag,
+          requireInteraction: options.requireInteraction,
+          hasActions: options.actions?.length > 0
+        });
+
         await self.registration.showNotification(data.title, options);
       } else {
         swLogger.debug('[SW] Silent mode enabled, skipping system notification');
@@ -249,24 +313,42 @@ self.addEventListener('push', (event) => {
 
 // Notification click event - Handle when user clicks on notification
 self.addEventListener('notificationclick', (event) => {
+  swLogger.debug('[SW] Notification clicked:', {
+    action: event.action,
+    type: event.notification.data?.type
+  });
+
   event.notification.close();
 
+  // Handle action buttons
+  if (event.action === 'dismiss') {
+    // User explicitly dismissed - do nothing
+    swLogger.debug('[SW] User dismissed notification');
+    return;
+  }
+
+  // 'view' action or default click
   const urlToOpen = event.notification.data?.url || '/?notifications=open';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
       // Check if there's already a window open
       if (clientList.length > 0) {
-        // Focus existing window and send message to open notifications
+        // Focus existing window
         const client = clientList[0];
         client.focus();
-        client.postMessage({
-          type: 'OPEN_NOTIFICATIONS_PANEL'
-        });
+
+        // Send message to open appropriate view
+        if (event.action === 'view' || !event.action) {
+          client.postMessage({
+            type: 'OPEN_NOTIFICATIONS_PANEL',
+            notificationData: event.notification.data
+          });
+        }
         return;
       }
 
-      // Otherwise, open a new window with notifications panel open
+      // Otherwise, open a new window
       if (clients.openWindow) {
         return clients.openWindow(urlToOpen);
       }
