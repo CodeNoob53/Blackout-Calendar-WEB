@@ -111,8 +111,8 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({
                 )}
                 <span>{t('common:theme')}</span>
               </div>
-              <div className="text-muted" style={{ fontSize: '0.875rem' }}>
-                {theme === 'dark' ? 'Dark' : 'Light'}
+              <div className="burger-menu-item-status">
+                {theme === 'dark' ? t('common:dark') : t('common:light')}
               </div>
             </button>
 

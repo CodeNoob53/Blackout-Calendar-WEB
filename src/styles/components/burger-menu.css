@@ -203,6 +203,21 @@ body.menu-open .app-root {
   color: var(--text-primary);
 }
 
+.burger-menu-item-status {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.dark .burger-menu-item-status {
+  color: var(--text-primary); /* Робимо білим для темної теми, як просив користувач */
+}
+
+.burger-menu-item:hover .burger-menu-item-status {
+  color: var(--text-primary);
+}
+
 /* Links */
 .burger-menu-link {
   display: flex;
