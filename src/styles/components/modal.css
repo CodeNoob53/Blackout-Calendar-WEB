@@ -2,12 +2,13 @@
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.5);
   z-index: 90;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .dark .modal-backdrop {
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.7);
 }
 
 /* Disable blur for elements under modal when open */
@@ -26,15 +27,13 @@ body.modal-open .app-root {
   border: 1px solid var(--border-color);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   overflow: hidden;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
   bottom: 0;
   left: 0;
   right: 0;
   top: 0;
   height: 100dvh;
   width: 100%;
-  animation: slideUp 0.2s ease-out;
+  /* Remove slideUp animation for instant transition on mobile */
   display: flex;
   flex-direction: column;
   will-change: transform, opacity;
@@ -54,8 +53,20 @@ body.modal-open .app-root {
     /* Fallback to 4rem if var not set */
     width: 24rem;
     height: auto;
-    animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    animation: modalFadeScale 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transform-origin: top right;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes modalFadeScale {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
@@ -89,7 +100,13 @@ body.modal-open .app-root {
   padding: 0;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-header);
-  height: 3rem;
+  height: 4rem; /* Match burger-menu-header height on mobile */
+}
+
+@media (min-width: 640px) {
+  .modal-header {
+    height: 3rem;
+  }
 }
 
 .tab-btn {
@@ -128,7 +145,8 @@ body.modal-open .app-root {
   color: var(--primary-color);
 }
 
-.close-btn {
+.close-btn,
+.back-btn {
   width: 3rem;
   height: 100%;
   display: flex;
@@ -136,16 +154,30 @@ body.modal-open .app-root {
   justify-content: center;
   background: none;
   border: none;
-  border-left: 1px solid var(--border-color);
   cursor: pointer;
   color: var(--text-muted);
   transition: all 0.2s;
   flex-shrink: 0;
 }
 
-.close-btn:hover {
+@media (min-width: 640px) {
+  .back-btn {
+    display: none; /* Hide back button on desktop */
+  }
+}
+
+.close-btn {
+  border-left: 1px solid var(--border-color);
+}
+
+.back-btn {
+  border-right: 1px solid var(--border-color);
+}
+
+.close-btn:hover,
+.back-btn:hover {
   color: var(--text-primary);
-  background: rgba(239, 68, 68, 0.1);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .dark .close-btn:hover {

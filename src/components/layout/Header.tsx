@@ -28,6 +28,7 @@ const Header: React.FC<HeaderProps> = ({
   const { t } = useTranslation(['common', 'ui']);
   const [showBanner, setShowBanner] = useState(false);
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -43,10 +44,17 @@ const Header: React.FC<HeaderProps> = ({
     return () => clearTimeout(timer);
   }, [isUsingCache]);
 
-  // NotificationCenter як окремий компонент для передачі в BurgerMenu
-  const notificationButton = (
-    <NotificationCenter currentQueueData={currentQueueData} isToday={isToday} />
-  );
+  // Спеціальний обробник для відкриття сповіщень з бургер-меню
+  const handleOpenNotificationsFromMenu = () => {
+    setIsBurgerOpen(false);
+    setIsNotificationsOpen(true);
+  };
+
+  // Повернення до бургер-меню
+  const handleBackToMenu = () => {
+    setIsNotificationsOpen(false);
+    setIsBurgerOpen(true);
+  };
 
   return (
     <header className="app-header">
@@ -70,7 +78,13 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* Desktop controls */}
           <div className="header-desktop-controls">
-            {notificationButton}
+            <NotificationCenter 
+              currentQueueData={currentQueueData} 
+              isToday={isToday}
+              isOpen={isNotificationsOpen}
+              onOpenChange={setIsNotificationsOpen}
+              onBack={handleBackToMenu}
+            />
             <LanguageSwitcher isMobile={false} />
             <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
           </div>
@@ -97,6 +111,7 @@ const Header: React.FC<HeaderProps> = ({
         toggleTheme={toggleTheme}
         currentQueueData={currentQueueData}
         isToday={isToday}
+        onOpenNotifications={handleOpenNotificationsFromMenu}
       />
     </header>
   );

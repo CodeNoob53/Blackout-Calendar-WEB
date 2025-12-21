@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Languages, Check, ChevronRight } from 'lucide-react';
 
@@ -14,7 +15,9 @@ const LANGUAGES = [
 const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ isMobile = false }) => {
   const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [position, setPosition] = useState({ top: 0, left: 0 });
 
   const currentLang = LANGUAGES.find(lang => lang.code === i18n.language) || LANGUAGES[0];
 
@@ -23,10 +26,35 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ isMobile = false })
     setIsOpen(false);
   };
 
+  const updatePosition = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setPosition({
+        top: rect.bottom + 8,
+        left: rect.right - 160 // Approximate width of dropdown
+      });
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen && !isMobile) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+    }
+    return () => {
+      window.removeEventListener('scroll', updatePosition);
+      window.removeEventListener('resize', updatePosition);
+    };
+  }, [isOpen, isMobile]);
+
   // Закриття dropdown при кліку поза ним
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(event.target as Node) &&
+        dropdownRef.current && !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -79,8 +107,9 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ isMobile = false })
 
   // Версія для desktop header (dropdown)
   return (
-    <div className="language-switcher" ref={dropdownRef}>
+    <div className="language-switcher">
       <button
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         className="icon-btn"
         aria-label={`Change language. Current: ${currentLang.label}`}
@@ -90,8 +119,17 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ isMobile = false })
         <Languages size={20} />
       </button>
 
-      {isOpen && (
-        <div className="language-dropdown">
+      {isOpen && createPortal(
+        <div 
+          className="language-dropdown" 
+          ref={dropdownRef}
+          style={{
+            position: 'fixed',
+            top: `${position.top}px`,
+            left: `${position.left}px`,
+            zIndex: 1000
+          }}
+        >
           {LANGUAGES.map(lang => (
             <button
               key={lang.code}
@@ -103,7 +141,8 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ isMobile = false })
               {i18n.language === lang.code && <Check size={14} />}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

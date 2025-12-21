@@ -25,6 +25,7 @@ interface BurgerMenuProps {
   toggleTheme: () => void;
   currentQueueData?: any;
   isToday: boolean;
+  onOpenNotifications: () => void;
 }
 
 const BurgerMenu: React.FC<BurgerMenuProps> = ({
@@ -33,7 +34,8 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({
   theme,
   toggleTheme,
   currentQueueData,
-  isToday
+  isToday,
+  onOpenNotifications
 }) => {
   const { t } = useTranslation(['common', 'ui']);
   const menuRef = useFocusTrap(isOpen);
@@ -116,12 +118,11 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({
               </div>
             </button>
 
-            {/* Сповіщення */}
             <NotificationCenter
               currentQueueData={currentQueueData}
               isToday={isToday}
-              renderTrigger={(unreadCount, onClick) => (
-                <button className="burger-menu-item" onClick={onClick}>
+              renderTrigger={(unreadCount) => (
+                <button className="burger-menu-item" onClick={onOpenNotifications}>
                   <div className="burger-menu-item-label flex-center" style={{ gap: '0.75rem' }}>
                     <Bell size={20} style={{ color: 'var(--text-muted)' }} />
                     <span>{t('common:notifications')}</span>

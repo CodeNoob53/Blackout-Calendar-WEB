@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSquare } from 'lucide-react';
+import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSquare, ChevronLeft } from 'lucide-react';
 import { NotificationSettings, NotificationItem, QueueData } from '../../types';
 import {
   fetchNewSchedules,
@@ -18,6 +18,9 @@ interface NotificationCenterProps {
   currentQueueData?: QueueData;
   isToday: boolean;
   renderTrigger?: (unreadCount: number, onClick: () => void) => React.ReactNode;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onBack?: () => void;
 }
 
 const DEFAULT_SETTINGS: NotificationSettings = {
@@ -28,9 +31,25 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   silentMode: false,
 };
 
-const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueData, isToday, renderTrigger }) => {
+const NotificationCenter: React.FC<NotificationCenterProps> = ({
+  currentQueueData,
+  isToday,
+  renderTrigger,
+  isOpen: controlledIsOpen,
+  onOpenChange,
+  onBack
+}) => {
   const { t, i18n } = useTranslation(['notifications', 'schedule']);
-  const [isOpen, setIsOpen] = useState(false);
+  const [uncontrolledIsOpen, setUncontrolledIsOpen] = useState(false);
+  const isOpen = controlledIsOpen !== undefined ? controlledIsOpen : uncontrolledIsOpen;
+  
+  const setIsOpen = (value: boolean) => {
+    if (onOpenChange) {
+      onOpenChange(value);
+    } else {
+      setUncontrolledIsOpen(value);
+    }
+  };
   const [activeTab, setActiveTab] = useState<'notifications' | 'settings'>('notifications');
   const [permission, setPermission] = useState<NotificationPermission>('default');
   const [isPushEnabled, setIsPushEnabled] = useState(false);
@@ -748,6 +767,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
           } as React.CSSProperties}>
 
             <div className="modal-header">
+              {onBack && (
+                <button onClick={onBack} className="back-btn" aria-label="Go back">
+                  <ChevronLeft size={24} />
+                </button>
+              )}
               <button
                 onClick={() => setActiveTab('notifications')}
                 className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
