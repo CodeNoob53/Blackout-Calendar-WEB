@@ -24,10 +24,10 @@ export const getCurrentTimePercentage = (): number => {
   return (minutes / 1440) * 100;
 };
 
-export const formatDate = (dateStr: string): string => {
+export const formatDate = (dateStr: string, locale: string = 'uk-UA'): string => {
   try {
     const date = new Date(dateStr);
-    return new Intl.DateTimeFormat('uk-UA', { 
+    return new Intl.DateTimeFormat(locale, { 
       weekday: 'long', 
       day: 'numeric', 
       month: 'long' 
@@ -51,7 +51,7 @@ export interface DateOption {
   isToday: boolean;
 }
 
-export const getThreeDayRange = (): DateOption[] => {
+export const getThreeDayRange = (locale: string = 'uk-UA'): DateOption[] => {
   const options: DateOption[] = [];
   const now = new Date();
 
@@ -63,7 +63,7 @@ export const getThreeDayRange = (): DateOption[] => {
     options.push({
       iso: getLocalISODate(d),
       day: String(d.getDate()),
-      weekday: new Intl.DateTimeFormat('uk-UA', { weekday: 'short' }).format(d),
+      weekday: new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d),
       isToday: i === 0
     });
   }

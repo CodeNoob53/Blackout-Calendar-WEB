@@ -21,7 +21,7 @@ const ALL_QUEUES = [
 ];
 
 const App: React.FC = () => {
-  const { t } = useTranslation(['common', 'ui', 'errors']);
+  const { t, i18n } = useTranslation(['common', 'ui', 'errors']);
   useLanguageSync(); // Синхронізація мови з backend
 
   const [status, setStatus] = useState<FetchStatus>('idle');
@@ -29,8 +29,11 @@ const App: React.FC = () => {
   const [isUsingCache, setIsUsingCache] = useState(false);
   const [serverUnavailable, setServerUnavailable] = useState(false);
 
-  const [dateOptions] = useState<DateOption[]>(getThreeDayRange());
-  const [selectedDate, setSelectedDate] = useState<string>(getThreeDayRange()[1].iso);
+  const currentLocale = i18n.language === 'en' ? 'en-US' : 'uk-UA';
+
+  const dateOptions = useMemo(() => getThreeDayRange(currentLocale), [currentLocale]);
+  const [selectedDate, setSelectedDate] = useState<string>(getThreeDayRange(currentLocale)[1].iso);
+
 
   const [userQueue, setUserQueue] = useState<string | null>(() => localStorage.getItem('userQueue'));
   const [viewQueue, setViewQueue] = useState<string>(() => localStorage.getItem('userQueue') || '1.1');
@@ -271,7 +274,8 @@ const App: React.FC = () => {
             <span className="date-pill">
               <CalendarDays size={12} style={{ opacity: 0.7 }} />
               <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {selectedDate ? formatDate(selectedDate) : '...'}
+                {selectedDate ? formatDate(selectedDate, currentLocale) : '...'}
+
               </span>
             </span>
           </div>

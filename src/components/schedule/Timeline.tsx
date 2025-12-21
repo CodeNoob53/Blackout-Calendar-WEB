@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Interval } from '../../types';
 import { getPercentage, getDurationPercentage, getCurrentTimePercentage } from '../../utils/timeHelper';
 
@@ -8,6 +9,7 @@ interface TimelineProps {
 }
 
 const Timeline: React.FC<TimelineProps> = ({ intervals, isToday }) => {
+  const { t } = useTranslation('ui');
   const [currentTimePct, setCurrentTimePct] = useState(getCurrentTimePercentage());
   const markers = Array.from({ length: 25 }, (_, i) => i);
 
@@ -75,11 +77,11 @@ const Timeline: React.FC<TimelineProps> = ({ intervals, isToday }) => {
       <div className="timeline-legend">
         <div className="legend-item">
           <div className="legend-dot light"></div>
-          <span>Світло є</span>
+          <span>{t('timeline.hasPower')}</span>
         </div>
         <div className="legend-item">
           <div className="legend-dot dark"></div>
-          <span>Відключення</span>
+          <span>{t('timeline.outage')}</span>
         </div>
       </div>
     </div>

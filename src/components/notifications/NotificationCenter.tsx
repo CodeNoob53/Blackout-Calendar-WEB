@@ -28,7 +28,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 };
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueData, isToday }) => {
-  const { t } = useTranslation(['notifications', 'schedule']);
+  const { t, i18n } = useTranslation(['notifications', 'schedule']);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'notifications' | 'settings'>('notifications');
   const [permission, setPermission] = useState<NotificationPermission>('default');
@@ -536,7 +536,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       const timeoutId = setTimeout(verifySubscription, 1000);
       return () => clearTimeout(timeoutId);
     }
-  }, [currentQueueData, pushSubscription, isPushEnabled]);
+  }, [currentQueueData, pushSubscription, isPushEnabled, i18n.language]);
 
   useEffect(() => {
     if (pushSubscription && currentQueueData) {
@@ -582,7 +582,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
       return () => clearTimeout(timeoutId);
     }
-  }, [currentQueueData, pushSubscription]);
+  }, [currentQueueData, pushSubscription, i18n.language]);
 
   useEffect(() => {
     let isMounted = true;
@@ -791,7 +791,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                               <h4 className="nc-title">{n.title}</h4>
                               <p className="nc-message">{n.message}</p>
                               <span className="nc-timestamp">
-                                {new Date(n.timestamp || n.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                {new Date(n.timestamp || n.date).toLocaleTimeString(i18n.language === 'en' ? 'en-US' : 'uk-UA', { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
 

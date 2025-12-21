@@ -2,9 +2,14 @@
   "header": {
     "offline": "Server is not responding. Showing cached schedule."
   },
+  "clock": {
+    "now": "Now"
+  },
   "timeline": {
     "noOutages": "No outages planned for this day!",
-    "outageTime": "{{start}} — {{end}}"
+    "outageTime": "{{start}} — {{end}}",
+    "hasPower": "Power On",
+    "outage": "Outage"
   },
   "dateSelector": {
     "today": "Today",

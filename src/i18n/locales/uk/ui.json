@@ -2,9 +2,14 @@
   "header": {
     "offline": "Сервер не відповідає. Показано збережену версію графіку."
   },
+  "clock": {
+    "now": "Зараз"
+  },
   "timeline": {
     "noOutages": "На цей день відключень не планується!",
-    "outageTime": "{{start}} — {{end}}"
+    "outageTime": "{{start}} — {{end}}",
+    "hasPower": "Світло є",
+    "outage": "Відключення"
   },
   "dateSelector": {
     "today": "Сьогодні",

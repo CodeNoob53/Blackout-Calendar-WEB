@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Clock: React.FC = () => {
+  const { t } = useTranslation('ui');
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -14,7 +16,7 @@ const Clock: React.FC = () => {
   return (
     <div className="clock-container">
       <span className="clock-label">
-        Зараз
+        {t('clock.now')}
       </span>
       <div className="clock-time">
         <span>{hours}</span>
