@@ -13,7 +13,7 @@
 - Frontend: [blackout-calendar-122838488015.us-west1.run.app](https://blackout-calendar-122838488015.us-west1.run.app/)
 - Backend: [blackout-calendar.onrender.com](https://blackout-calendar.onrender.com/)
 
-[Backend Repo](https://github.com/CodeNoob53/blackout_calendar) • [Документація](./LOGGING.md)
+[Backend Repo](https://github.com/CodeNoob53/blackout_calendar) • [Документація](./docs/)
 
 </div>
 
