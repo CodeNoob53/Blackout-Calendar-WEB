@@ -1,0 +1,16 @@
+{
+  "appTitle": "Is There Power?",
+  "appSubtitle": "Blackout Schedule",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "selectQueue": "Select Queue",
+  "yourQueue": "YOUR QUEUE",
+  "schedule": "Schedule",
+  "settings": "Settings",
+  "notifications": "Notifications",
+  "language": "Language",
+  "theme": "Theme",
+  "light": "Light",
+  "dark": "Dark"
+}

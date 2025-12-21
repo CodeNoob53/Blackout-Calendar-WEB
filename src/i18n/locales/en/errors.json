@@ -1,0 +1,9 @@
+{
+  "serverUnavailable": "Server temporarily unavailable",
+  "serverUnavailableDesc": "Try again in a few minutes. If problem persists, check our Telegram.",
+  "loadingError": "Loading error",
+  "loadingErrorDesc": "Check your internet connection and try refreshing the page.",
+  "scheduleNotPublished": "Schedule not yet published",
+  "scheduleNotPublishedDesc": "Information appears in the evening",
+  "noData": "No blackout data available"
+}

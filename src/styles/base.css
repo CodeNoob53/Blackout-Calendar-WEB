@@ -16,8 +16,14 @@ body {
   background-blend-mode: multiply, multiply;
   color: var(--text-primary);
   min-height: 100vh;
-  transition: background 0.5s ease;
+  transition: background 0.3s ease; /* Reduced from 0.5s for snappier feel and better performance */
 }
+
+/* Force disable transitions during theme change */
+.no-transitions * {
+  transition: none !important;
+}
+
 
 /* Utility Classes */
 .container {
@@ -29,11 +35,11 @@ body {
 
 .glass-card {
   background: var(--bg-card);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-color);
   box-shadow: var(--shadow-card);
-  transition: background-color 0.3s ease, is-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
   transform: translateZ(0);
   /* GPU */
 }

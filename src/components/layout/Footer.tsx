@@ -1,7 +1,10 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Github } from 'lucide-react';
 
 const Footer: React.FC = () => {
+  const { t } = useTranslation('ui');
+
   return (
     <footer className="app-footer">
       <div className="github-links">
@@ -12,7 +15,7 @@ const Footer: React.FC = () => {
           className="github-btn"
         >
           <Github size={16} />
-          <span>Blackout Calendar API</span>
+          <span>{t('footer.apiLink')}</span>
         </a>
 
         <a
@@ -22,16 +25,16 @@ const Footer: React.FC = () => {
           className="github-btn"
         >
           <Github size={16} />
-          <span>Blackout Calendar WEB</span>
+          <span>{t('footer.webLink')}</span>
         </a>
       </div>
 
       <div className="footer-info">
         <p className="footer-copyright">
-          © {new Date().getFullYear()} Blackout Calendar.
+          {t('footer.copyright', { year: new Date().getFullYear() })}
         </p>
         <p className="footer-disclaimer">
-          Дані отримані з відкритих джерел
+          {t('footer.disclaimer')}
         </p>
       </div>
     </footer>

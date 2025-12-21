@@ -1,0 +1,16 @@
+{
+  "appTitle": "Світло Є?",
+  "appSubtitle": "Графік відключень",
+  "loading": "Завантаження...",
+  "error": "Помилка",
+  "success": "Успішно",
+  "selectQueue": "Оберіть чергу",
+  "yourQueue": "ВАША ЧЕРГА",
+  "schedule": "Графік",
+  "settings": "Налаштування",
+  "notifications": "Сповіщення",
+  "language": "Мова",
+  "theme": "Тема",
+  "light": "Світла",
+  "dark": "Темна"
+}

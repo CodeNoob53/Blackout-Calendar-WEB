@@ -1,0 +1,10 @@
+{
+  "newSchedule": "New schedule",
+  "scheduleFor": "Schedule available for {{date}}",
+  "scheduleChanged": "Schedule changes",
+  "changesFor": "Changes made to schedule for {{date}}",
+  "lightOff": "Power going off soon",
+  "lightOffDesc": "Attention! Blackout scheduled at {{time}}.",
+  "lightOn": "Power coming back soon",
+  "lightOnDesc": "Power restoration expected at {{time}}."
+}

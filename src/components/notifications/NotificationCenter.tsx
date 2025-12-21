@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSquare } from 'lucide-react';
 import { NotificationSettings, NotificationItem, QueueData } from '../../types';
 import {
@@ -27,6 +28,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
 };
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueData, isToday }) => {
+  const { t } = useTranslation(['notifications', 'schedule']);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'notifications' | 'settings'>('notifications');
   const [permission, setPermission] = useState<NotificationPermission>('default');
@@ -74,8 +76,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
     if (serverUnavailableNotified.current) return;
 
     addNotification({
-      title: 'Сервер недоступний',
-      message: 'Оновлення будуть доступні, щойно сервер відновить роботу.',
+      title: t('notifications:serverUnavailable'),
+      message: t('notifications:serverUnavailableMessage'),
       type: 'warning'
     });
 
@@ -303,22 +305,35 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
   }, [notifications]);
 
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) {
+      document.body.classList.add('modal-open');
+    } else {
+      document.body.classList.remove('modal-open');
+      
+      // Mark as read when closing
       const hasUnread = notifications.some(n => !n.read);
       if (hasUnread) {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
       }
     }
+
+    return () => {
+      document.body.classList.remove('modal-open');
+    };
   }, [isOpen]);
 
   const requestPermission = async () => {
+
     if (!('Notification' in window)) return;
     try {
       const result = await Notification.requestPermission();
       setPermission(result);
       if (result === 'granted') {
         await subscribeToPush();
-        sendSystemNotification('Сповіщення увімкнено!', 'Тепер ви будете отримувати важливі нагадування.');
+        sendSystemNotification(
+          t('notifications:notificationsEnabled'),
+          t('notifications:notificationsEnabledMessage')
+        );
       }
     } catch (e) {
       logger.error(e);
@@ -355,8 +370,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       logger.debug('Successfully subscribed to push notifications');
 
       addNotification({
-        title: '✅ Підписка активована',
-        message: 'Ви отримуватимете сповіщення про відключення світла',
+        title: t('notifications:subscriptionActivated'),
+        message: t('notifications:subscriptionActivatedMessage'),
         type: 'success'
       });
     } catch (error) {
@@ -392,8 +407,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       logger.debug('Successfully unsubscribed from push notifications');
 
       addNotification({
-        title: '🔕 Підписка вимкнена',
-        message: 'Ви більше не отримуватимете push-сповіщення',
+        title: t('notifications:subscriptionDisabled'),
+        message: t('notifications:subscriptionDisabledMessage'),
         type: 'info'
       });
     } catch (error) {
@@ -458,8 +473,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         const offAlertId = `${new Date().toDateString()}-${interval.start}-off`;
 
         if (timeUntilOff === 30 && !processedAlerts.current.has(offAlertId)) {
-          const title = 'Світло зникне скоро';
-          const msg = `Увага! Відключення заплановано на ${interval.start}.`;
+          const title = t('notifications:lightOffSoon');
+          const msg = t('notifications:lightOffSoonMessage', { time: interval.start });
 
           addNotification({
             title: title,
@@ -474,8 +489,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         const onAlertId = `${new Date().toDateString()}-${interval.end}-on`;
 
         if (timeUntilOn === 30 && !processedAlerts.current.has(onAlertId)) {
-          const title = 'Світло зʼявиться скоро';
-          const msg = `За графіком включення очікується о ${interval.end}.`;
+          const title = t('notifications:lightOnSoon');
+          const msg = t('notifications:lightOnSoonMessage', { time: interval.end });
 
           addNotification({
             title: title,
@@ -506,8 +521,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
               logger.debug('✅ Subscription auto-restored successfully!');
 
               addNotification({
-                title: '🔄 Підписка відновлена',
-                message: 'Сповіщення про відключення світла знову працюють',
+                title: t('notifications:subscriptionRestored'),
+                message: t('notifications:subscriptionRestoredMessage'),
                 type: 'success'
               });
             } catch (restoreError) {
@@ -648,8 +663,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 data.schedules,
                 'info',
                 'new',
-                (item) => 'Новий графік',
-                (item) => item.pushMessage || `Доступний графік на ${item.date}`
+                (item) => t('schedule:newSchedule'),
+                (item) => item.pushMessage || t('schedule:scheduleAvailable', { date: item.date })
               );
             }
           }
@@ -671,8 +686,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 data.schedules,
                 'warning',
                 'change',
-                (item) => 'Зміни в графіку',
-                (item) => item.pushMessage || `Внесено зміни в графік на ${item.date}`
+                (item) => t('schedule:scheduleChanged'),
+                (item) => item.pushMessage || t('schedule:scheduleChangedMessage', { date: item.date })
               );
             }
           }
@@ -731,13 +746,13 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 onClick={() => setActiveTab('notifications')}
                 className={`tab-btn ${activeTab === 'notifications' ? 'active' : ''}`}
               >
-                Сповіщення {unreadCount > 0 && `(${unreadCount})`}
+                {t('notifications:title')} {unreadCount > 0 && `(${unreadCount})`}
               </button>
               <button
                 onClick={() => setActiveTab('settings')}
                 className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
               >
-                Налаштування
+                {t('notifications:settingsTab')}
               </button>
               <button onClick={() => setIsOpen(false)} className="close-btn">
                 <X size={20} />
@@ -749,17 +764,17 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 <div>
                   <div className="nc-actions-header">
                     <button onClick={markAllRead} className="nc-action-btn">
-                      <Check size={12} /> Позначити прочитаним
+                      <Check size={12} /> {t('notifications:markAsRead')}
                     </button>
                     <button onClick={clearHistory} className="nc-action-btn">
-                      <Trash2 size={12} /> Очистити
+                      <Trash2 size={12} /> {t('notifications:clearHistory')}
                     </button>
                   </div>
 
                   {notifications.length === 0 ? (
                     <div className="nc-empty-state">
                       <Bell size={40} className="nc-empty-icon" />
-                      <p className="nc-empty-text">Сповіщень поки немає</p>
+                      <p className="nc-empty-text">{t('notifications:emptyState')}</p>
                     </div>
                   ) : (
                     <div>
@@ -795,16 +810,16 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                     <div className="nc-permission-block">
                       <h4 className="nc-permission-header">
                         <MessageSquare size={16} />
-                        Системні сповіщення
+                        {t('notifications:systemNotifications')}
                       </h4>
                       <p className="nc-permission-text">
-                        Дозвольте надсилати сповіщення, щоб не пропустити відключення.
+                        {t('notifications:permissionRequest')}
                       </p>
                       <button
                         onClick={requestPermission}
                         className="nc-permission-btn"
                       >
-                        Увімкнути
+                        {t('notifications:enable')}
                       </button>
                     </div>
                   )}
@@ -812,7 +827,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   {permission === 'denied' && (
                     <div className="nc-permission-block denied">
                       <p className="nc-denied-text">
-                        Сповіщення заблоковано в налаштуваннях браузера.
+                        {t('notifications:permissionDenied')}
                       </p>
                     </div>
                   )}
@@ -823,17 +838,17 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                         <div>
                           <h4 className="nc-permission-header">
                             <CheckCircle size={16} />
-                            Веб-пуш {isPushEnabled ? 'увімкнено' : 'вимкнено'}
+                            {t('notifications:webPush')} {isPushEnabled ? t('notifications:enabled') : t('notifications:disabled')}
                           </h4>
                           <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                            {isPushEnabled ? 'Сповіщення надходять навіть коли сайт закритий' : 'Натисніть кнопку для активації'}
+                            {isPushEnabled ? t('notifications:pushEnabledInfo') : t('notifications:pushDisabledInfo')}
                           </p>
                         </div>
                         <button
                           onClick={isPushEnabled ? unsubscribeToPush : subscribeToPush}
                           className={`nc-push-toggle-btn ${isPushEnabled ? 'disable' : 'enable'}`}
                         >
-                          {isPushEnabled ? 'Вимкнути' : 'Увімкнути'}
+                          {isPushEnabled ? t('notifications:disable') : t('notifications:enable')}
                         </button>
                       </div>
                     </div>
@@ -844,32 +859,32 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                     {[
                       {
                         id: 'silentMode',
-                        label: 'Тихий режим',
-                        sub: 'Без системних сповіщень, тільки в панелі',
+                        label: t('notifications:silentMode'),
+                        sub: t('notifications:silentModeDesc'),
                         val: settings.silentMode
                       },
                       {
                         id: 'lightAlerts',
-                        label: 'Сповіщення про світло',
-                        sub: 'За 30 хв до події',
+                        label: t('notifications:lightAlerts'),
+                        sub: t('notifications:lightAlertsDesc'),
                         val: settings.lightAlerts
                       },
                       {
                         id: 'nightMode',
-                        label: 'Не турбувати вночі',
-                        sub: 'Тиша з 22:00 до 08:00',
+                        label: t('notifications:nightMode'),
+                        sub: t('notifications:nightModeDesc'),
                         val: settings.nightMode
                       },
                       {
                         id: 'scheduleUpdates',
-                        label: 'Зміни графіку',
-                        sub: 'Оновлення даних',
+                        label: t('notifications:scheduleUpdates'),
+                        sub: t('notifications:scheduleUpdatesDesc'),
                         val: settings.scheduleUpdates
                       },
                       {
                         id: 'tomorrowSchedule',
-                        label: 'Графік на завтра',
-                        sub: 'Нові публікації',
+                        label: t('notifications:tomorrowSchedule'),
+                        sub: t('notifications:tomorrowScheduleDesc'),
                         val: settings.tomorrowSchedule
                       }
                     ].map((item) => (

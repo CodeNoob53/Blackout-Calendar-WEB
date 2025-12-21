@@ -3,7 +3,6 @@
   position: fixed;
   inset: 0;
   background: rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(4px);
   z-index: 90;
 }
 
@@ -11,11 +10,19 @@
   background: rgba(0, 0, 0, 0.6);
 }
 
+/* Disable blur for elements under modal when open */
+body.modal-open .app-root {
+  filter: none !important;
+  backdrop-filter: none !important;
+}
+
+
 .modal-content {
   position: fixed;
   z-index: 100;
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
   border: 1px solid var(--border-color);
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   overflow: hidden;
@@ -30,7 +37,11 @@
   animation: slideUp 0.2s ease-out;
   display: flex;
   flex-direction: column;
+  will-change: transform, opacity;
+  transform: translate3d(0, 0, 0);
+  contain: content;
 }
+
 
 @media (min-width: 640px) {
   .modal-content {
@@ -43,9 +54,11 @@
     /* Fallback to 4rem if var not set */
     width: 24rem;
     height: auto;
-    animation: fadeIn 0.2s ease-out;
+    animation: slideInRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translate3d(0, 0, 0);
   }
 }
+
 
 @keyframes slideUp {
   from {
@@ -57,15 +70,15 @@
   }
 }
 
-@keyframes fadeIn {
+@keyframes slideInRight {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateX(100%);
   }
 
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateX(0);
   }
 }
 

@@ -1,0 +1,24 @@
+{
+  "header": {
+    "offline": "Server is not responding. Showing cached schedule."
+  },
+  "timeline": {
+    "noOutages": "No outages planned for this day!",
+    "outageTime": "{{start}} — {{end}}"
+  },
+  "dateSelector": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow"
+  },
+  "footer": {
+    "copyright": "© {{year}} Blackout Calendar.",
+    "disclaimer": "Data from open sources",
+    "apiLink": "Blackout Calendar API",
+    "webLink": "Blackout Calendar WEB",
+    "about": "About",
+    "version": "Version",
+    "changelog": "Changelog",
+    "help": "Help"
+  }
+}

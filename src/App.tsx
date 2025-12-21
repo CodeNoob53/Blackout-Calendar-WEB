@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { fetchLatestSchedule, fetchScheduleByDate, getFromCache, saveToCache, checkHealth, CACHE_KEYS } from './services/api';
 import { ScheduleResponse, FetchStatus, QueueData } from './types';
 import Timeline from './components/schedule/Timeline';
@@ -8,6 +9,7 @@ import Footer from './components/layout/Footer';
 import BackgroundEffects from './components/effects/BackgroundEffects';
 import { formatDate, getLocalISODate, getThreeDayRange, DateOption } from './utils/timeHelper';
 import { Zap, ZapOff, AlertTriangle, RefreshCw, Layers, CalendarDays, Server, Clock as ClockIcon } from 'lucide-react';
+import { useLanguageSync } from './hooks/useLanguageSync';
 
 const ALL_QUEUES = [
   '1.1', '1.2',
@@ -19,6 +21,9 @@ const ALL_QUEUES = [
 ];
 
 const App: React.FC = () => {
+  const { t } = useTranslation(['common', 'ui', 'errors']);
+  useLanguageSync(); // Синхронізація мови з backend
+
   const [status, setStatus] = useState<FetchStatus>('idle');
   const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(null);
   const [isUsingCache, setIsUsingCache] = useState(false);
@@ -47,7 +52,16 @@ const App: React.FC = () => {
   }, [theme]);
 
   const toggleTheme = () => {
+    // Disable transitions during theme change to prevent "paint storm"
+    const root = window.document.documentElement;
+    root.classList.add('no-transitions');
+    
     setTheme(prev => prev === 'light' ? 'dark' : 'light');
+    
+    // Briefly wait for the state change to apply, then re-enable transitions
+    setTimeout(() => {
+      root.classList.remove('no-transitions');
+    }, 100);
   };
 
   useEffect(() => {
@@ -224,11 +238,11 @@ const App: React.FC = () => {
         <section className="glass-card queue-section">
           <div className="queue-header">
             <label className="queue-label">
-              <Layers size={16} /> Оберіть чергу
+              <Layers size={16} /> {t('common:selectQueue')}
             </label>
             {userQueue && (
               <span className="user-queue-badge">
-                ВАША ЧЕРГА: {userQueue}
+                {t('common:yourQueue')}: {userQueue}
               </span>
             )}
           </div>
@@ -251,7 +265,7 @@ const App: React.FC = () => {
 
           <div className="viz-header">
             <h2 className="viz-title">
-              Графік <span className="text-muted">/</span>
+              {t('common:schedule')} <span className="text-muted">/</span>
               <span className="queue-number">{viewQueue}</span>
             </h2>
             <span className="date-pill">
@@ -271,11 +285,11 @@ const App: React.FC = () => {
               <div className="state-icon-box" style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)', borderColor: 'var(--danger-text)' }}>
                 <AlertTriangle size={32} />
               </div>
-              <p className="font-medium">{serverUnavailable ? 'Сервер тимчасово недоступний' : 'Помилка завантаження'}</p>
+              <p className="font-medium">{serverUnavailable ? t('errors:serverUnavailable') : t('errors:loadingError')}</p>
               <p className="text-xs mt-1">
                 {serverUnavailable
-                  ? 'Спробуйте ще раз за кілька хвилин. Якщо проблема не зникає, перегляньте наш Telegram.'
-                  : 'Перевірте підключення до інтернету та спробуйте оновити сторінку.'}
+                  ? t('errors:serverUnavailableDesc')
+                  : t('errors:loadingErrorDesc')}
               </p>
             </div>
           ) : !scheduleData || !currentQueueData ? (
@@ -285,15 +299,15 @@ const App: React.FC = () => {
                   <div className="state-icon-box" style={{ color: 'var(--warning-text)', background: 'var(--warning-bg)' }}>
                     <ClockIcon size={24} />
                   </div>
-                  <p className="font-medium">Графік ще не опубліковано</p>
-                  <p className="text-xs mt-1">Інформація з'являється ввечері</p>
+                  <p className="font-medium">{t('errors:scheduleNotPublished')}</p>
+                  <p className="text-xs mt-1">{t('errors:scheduleNotPublishedDesc')}</p>
                 </>
               ) : (
                 <>
                   <div className="state-icon-box">
                     <Zap size={24} className="text-muted" />
                   </div>
-                  <p className="font-medium">Даних про відключення немає</p>
+                  <p className="font-medium">{t('errors:noData')}</p>
                 </>
               )}
             </div>
@@ -311,7 +325,7 @@ const App: React.FC = () => {
                 ) : (
                   <div className="no-outages-msg">
                     <Zap size={20} style={{ marginRight: '12px' }} />
-                    <span>На цей день відключень не планується!</span>
+                    <span>{t('ui:timeline.noOutages')}</span>
                   </div>
                 )}
               </div>

@@ -1,0 +1,24 @@
+{
+  "header": {
+    "offline": "Сервер не відповідає. Показано збережену версію графіку."
+  },
+  "timeline": {
+    "noOutages": "На цей день відключень не планується!",
+    "outageTime": "{{start}} — {{end}}"
+  },
+  "dateSelector": {
+    "today": "Сьогодні",
+    "yesterday": "Вчора",
+    "tomorrow": "Завтра"
+  },
+  "footer": {
+    "copyright": "© {{year}} Blackout Calendar.",
+    "disclaimer": "Дані отримані з відкритих джерел",
+    "apiLink": "Blackout Calendar API",
+    "webLink": "Blackout Calendar WEB",
+    "about": "Про проєкт",
+    "version": "Версія",
+    "changelog": "Зміни",
+    "help": "Допомога"
+  }
+}
