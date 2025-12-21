@@ -8,10 +8,14 @@ import {
   Info,
   FileText,
   HelpCircle,
-  Package
+  Package,
+  Moon,
+  Sun,
+  Bell,
+  ChevronRight
 } from 'lucide-react';
+import NotificationCenter from '../notifications/NotificationCenter';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
-import ThemeToggle from '../ui/ThemeToggle';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
 
 interface BurgerMenuProps {
@@ -19,7 +23,8 @@ interface BurgerMenuProps {
   onClose: () => void;
   theme: 'light' | 'dark';
   toggleTheme: () => void;
-  notificationButton: React.ReactNode; // NotificationCenter кнопка
+  currentQueueData?: any;
+  isToday: boolean;
 }
 
 const BurgerMenu: React.FC<BurgerMenuProps> = ({
@@ -27,7 +32,8 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({
   onClose,
   theme,
   toggleTheme,
-  notificationButton
+  currentQueueData,
+  isToday
 }) => {
   const { t } = useTranslation(['common', 'ui']);
   const menuRef = useFocusTrap(isOpen);
@@ -94,22 +100,39 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({
 
             {/* Мова */}
             <LanguageSwitcher isMobile={true} />
-
+            
             {/* Тема */}
-            <div className="burger-menu-item">
-              <div className="burger-menu-item-label">
-                {t('common:theme')}
+            <button className="burger-menu-item" onClick={toggleTheme}>
+              <div className="burger-menu-item-label flex-center" style={{ gap: '0.75rem' }}>
+                {theme === 'dark' ? (
+                  <Moon size={20} style={{ color: 'var(--text-muted)' }} />
+                ) : (
+                  <Sun size={20} style={{ color: 'var(--text-muted)' }} />
+                )}
+                <span>{t('common:theme')}</span>
               </div>
-              <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
-            </div>
+              <div className="text-muted" style={{ fontSize: '0.875rem' }}>
+                {theme === 'dark' ? 'Dark' : 'Light'}
+              </div>
+            </button>
 
             {/* Сповіщення */}
-            <div className="burger-menu-item">
-              <div className="burger-menu-item-label">
-                {t('common:notifications')}
-              </div>
-              {notificationButton}
-            </div>
+            <NotificationCenter
+              currentQueueData={currentQueueData}
+              isToday={isToday}
+              renderTrigger={(unreadCount, onClick) => (
+                <button className="burger-menu-item" onClick={onClick}>
+                  <div className="burger-menu-item-label flex-center" style={{ gap: '0.75rem' }}>
+                    <Bell size={20} style={{ color: 'var(--text-muted)' }} />
+                    <span>{t('common:notifications')}</span>
+                  </div>
+                  {unreadCount > 0 && (
+                    <span className="badge-notification">{unreadCount}</span>
+                  )}
+                  <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
+                </button>
+              )}
+            />
           </div>
 
           {/* Навігаційні посилання */}

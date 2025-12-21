@@ -90,13 +90,13 @@ const Header: React.FC<HeaderProps> = ({
          </div>
       )}
 
-      {/* Burger Menu */}
       <BurgerMenu
         isOpen={isBurgerOpen}
         onClose={() => setIsBurgerOpen(false)}
         theme={theme}
         toggleTheme={toggleTheme}
-        notificationButton={notificationButton}
+        currentQueueData={currentQueueData}
+        isToday={isToday}
       />
     </header>
   );

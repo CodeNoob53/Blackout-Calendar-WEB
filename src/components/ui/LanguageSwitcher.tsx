@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Languages, Check } from 'lucide-react';
+import { Languages, Check, ChevronRight } from 'lucide-react';
 
 interface LanguageSwitcherProps {
   isMobile?: boolean; // Для різних стилів в header vs burger menu
@@ -41,22 +41,34 @@ const LanguageSwitcher: React.FC<LanguageSwitcherProps> = ({ isMobile = false })
   }, [isOpen]);
 
   if (isMobile) {
-    // Версія для бургер-меню (простий список)
+    // Версія для бургер-меню (аккордеон)
     return (
-      <div className="burger-menu-language-section">
-        <h4 className="burger-menu-section-title">
-          <Languages size={16} />
-          Мова / Language
-        </h4>
-        <div className="language-list">
+      <div className={`burger-menu-language-accordion ${isOpen ? 'open' : ''}`}>
+        <button
+          className="burger-menu-item accordion-trigger"
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <div className="burger-menu-item-label flex-center" style={{ gap: '0.75rem' }}>
+            <Languages size={20} style={{ color: 'var(--text-muted)' }} />
+            <span>{currentLang.label}</span>
+          </div>
+          <ChevronRight
+            size={18}
+            className={`accordion-chevron ${isOpen ? 'rotated' : ''}`}
+            style={{ color: 'var(--text-muted)' }}
+          />
+        </button>
+        <div className="accordion-content">
           {LANGUAGES.map(lang => (
             <button
               key={lang.code}
               onClick={() => changeLanguage(lang.code)}
               className={`language-option ${i18n.language === lang.code ? 'active' : ''}`}
             >
-              <span className="language-flag">{lang.flag}</span>
-              <span className="language-label">{lang.label}</span>
+              <div className="flex-center" style={{ gap: '0.75rem' }}>
+                <span className="language-flag">{lang.flag}</span>
+                <span className="language-label">{lang.label}</span>
+              </div>
               {i18n.language === lang.code && <Check size={16} className="language-check" />}
             </button>
           ))}

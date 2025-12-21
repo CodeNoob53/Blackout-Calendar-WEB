@@ -149,7 +149,7 @@ body.menu-open .app-root {
 
 /* Sections */
 .burger-menu-section {
-  padding: 1rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid var(--border-color);
 }
 
@@ -175,12 +175,26 @@ body.menu-open .app-root {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.875rem 1rem;
-  transition: background 0.2s;
+  padding: 1rem;
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
 }
 
 .burger-menu-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--icon-btn-hover-bg);
+}
+
+.burger-menu-item:active {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.burger-menu-item.accordion-trigger {
+  position: relative;
+  z-index: 2;
 }
 
 .burger-menu-item-label {
@@ -210,9 +224,77 @@ body.menu-open .app-root {
   background: rgba(255, 255, 255, 0.05);
 }
 
-.burger-menu-link svg {
-  color: var(--text-muted);
-  flex-shrink: 0;
+/* Language Accordion */
+.burger-menu-language-accordion {
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.accordion-chevron {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.accordion-chevron.rotated {
+  transform: rotate(90deg);
+}
+
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.burger-menu-language-accordion.open .accordion-content {
+  max-height: 200px; /* Достатньо для списку мов */
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.language-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.language-option:hover {
+  background: var(--icon-btn-hover-bg);
+}
+
+.language-option.active {
+  background: var(--accent-color-soft);
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.language-flag {
+  font-size: 1.25rem;
+  filter: saturate(0.8);
+}
+
+.language-check {
+  color: var(--primary-color);
+}
+
+.badge-notification {
+  background: var(--primary-color);
+  color: white;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.125rem 0.375rem;
+  border-radius: 1rem;
+  min-width: 1.25rem;
+  text-align: center;
+  margin-left: auto;
+  margin-right: 0.5rem;
 }
 
 /* Responsive - Ховати на desktop */
