@@ -17,6 +17,7 @@ import { logger } from '../../utils/logger';
 interface NotificationCenterProps {
   currentQueueData?: QueueData;
   isToday: boolean;
+  renderTrigger?: (unreadCount: number, onClick: () => void) => React.ReactNode;
 }
 
 const DEFAULT_SETTINGS: NotificationSettings = {
@@ -27,7 +28,7 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   silentMode: false,
 };
 
-const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueData, isToday }) => {
+const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueData, isToday, renderTrigger }) => {
   const { t, i18n } = useTranslation(['notifications', 'schedule']);
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'notifications' | 'settings'>('notifications');
@@ -110,7 +111,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
           if (isEmergency) {
             // Можна замінити на гарне модальне вікно в майбутньому
-            alert(`🚨 ${notification.title}\n\n${notification.message}`);
+            const alertTitle = i18n.language === 'en' ? 'EMERGENCY' : 'АВАРІЙНЕ ВІДКЛЮЧЕННЯ';
+            alert(`🚨 ${alertTitle}\n\n${notification.title}\n${notification.message}`);
           }
 
           addNotification({
@@ -371,7 +373,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
       addNotification({
         title: t('notifications:subscriptionActivated'),
-        message: t('notifications:subscriptionActivatedMessage'),
+        message: t('notifications:subscriptionActivatedDesc'),
         type: 'success'
       });
     } catch (error) {
@@ -407,8 +409,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
       logger.debug('Successfully unsubscribed from push notifications');
 
       addNotification({
-        title: t('notifications:subscriptionDisabled'),
-        message: t('notifications:subscriptionDisabledMessage'),
+        title: t('notifications:subscriptionDeactivated'),
+        message: t('notifications:subscriptionDeactivatedDesc'),
         type: 'info'
       });
     } catch (error) {
@@ -473,8 +475,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         const offAlertId = `${new Date().toDateString()}-${interval.start}-off`;
 
         if (timeUntilOff === 30 && !processedAlerts.current.has(offAlertId)) {
-          const title = t('notifications:lightOffSoon');
-          const msg = t('notifications:lightOffSoonMessage', { time: interval.start });
+          const title = t('schedule:lightOff');
+          const msg = t('schedule:lightOffDesc', { time: interval.start });
 
           addNotification({
             title: title,
@@ -489,8 +491,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
         const onAlertId = `${new Date().toDateString()}-${interval.end}-on`;
 
         if (timeUntilOn === 30 && !processedAlerts.current.has(onAlertId)) {
-          const title = t('notifications:lightOnSoon');
-          const msg = t('notifications:lightOnSoonMessage', { time: interval.end });
+          const title = t('schedule:lightOn');
+          const msg = t('schedule:lightOnDesc', { time: interval.end });
 
           addNotification({
             title: title,
@@ -522,7 +524,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
               addNotification({
                 title: t('notifications:subscriptionRestored'),
-                message: t('notifications:subscriptionRestoredMessage'),
+                message: t('notifications:subscriptionRestoredDesc'),
                 type: 'success'
               });
             } catch (restoreError) {
@@ -664,7 +666,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 'info',
                 'new',
                 (item) => t('schedule:newSchedule'),
-                (item) => item.pushMessage || t('schedule:scheduleAvailable', { date: item.date })
+                (item) => item.pushMessage || t('schedule:scheduleFor', { date: item.date })
               );
             }
           }
@@ -687,7 +689,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 'warning',
                 'change',
                 (item) => t('schedule:scheduleChanged'),
-                (item) => item.pushMessage || t('schedule:scheduleChangedMessage', { date: item.date })
+                (item) => item.pushMessage || t('schedule:changesFor', { date: item.date })
               );
             }
           }
@@ -718,19 +720,23 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
 
   return (
     <>
-      <button
-        ref={buttonRef}
-        onClick={toggleOpen}
-        className="icon-btn"
-      >
-        <Bell size={20} fill="currentColor" />
-        {unreadCount > 0 && (
-          <span className="badge-dot">
-            <span className="badge-ping"></span>
-            <span className="badge-solid"></span>
-          </span>
-        )}
-      </button>
+      {renderTrigger ? (
+        renderTrigger(unreadCount, toggleOpen)
+      ) : (
+        <button
+          ref={buttonRef}
+          onClick={toggleOpen}
+          className="icon-btn"
+        >
+          <Bell size={20} fill="currentColor" />
+          {unreadCount > 0 && (
+            <span className="badge-dot">
+              <span className="badge-ping"></span>
+              <span className="badge-solid"></span>
+            </span>
+          )}
+        </button>
+      )}
 
       {isOpen && createPortal(
         <>
@@ -752,7 +758,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 onClick={() => setActiveTab('settings')}
                 className={`tab-btn ${activeTab === 'settings' ? 'active' : ''}`}
               >
-                {t('notifications:settingsTab')}
+                {t('notifications:settings')}
               </button>
               <button onClick={() => setIsOpen(false)} className="close-btn">
                 <X size={20} />
@@ -764,17 +770,17 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                 <div>
                   <div className="nc-actions-header">
                     <button onClick={markAllRead} className="nc-action-btn">
-                      <Check size={12} /> {t('notifications:markAsRead')}
+                      <Check size={12} /> {t('notifications:markAllRead')}
                     </button>
                     <button onClick={clearHistory} className="nc-action-btn">
-                      <Trash2 size={12} /> {t('notifications:clearHistory')}
+                      <Trash2 size={12} /> {t('notifications:clear')}
                     </button>
                   </div>
 
                   {notifications.length === 0 ? (
                     <div className="nc-empty-state">
                       <Bell size={40} className="nc-empty-icon" />
-                      <p className="nc-empty-text">{t('notifications:emptyState')}</p>
+                      <p className="nc-empty-text">{t('notifications:empty')}</p>
                     </div>
                   ) : (
                     <div>
@@ -813,7 +819,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                         {t('notifications:systemNotifications')}
                       </h4>
                       <p className="nc-permission-text">
-                        {t('notifications:permissionRequest')}
+                        {t('notifications:permissionText')}
                       </p>
                       <button
                         onClick={requestPermission}
@@ -827,7 +833,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                   {permission === 'denied' && (
                     <div className="nc-permission-block denied">
                       <p className="nc-denied-text">
-                        {t('notifications:permissionDenied')}
+                        {t('notifications:notificationsBlocked')}
                       </p>
                     </div>
                   )}
@@ -838,10 +844,10 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({ currentQueueDat
                         <div>
                           <h4 className="nc-permission-header">
                             <CheckCircle size={16} />
-                            {t('notifications:webPush')} {isPushEnabled ? t('notifications:enabled') : t('notifications:disabled')}
+                            {isPushEnabled ? t('notifications:webPushEnabled') : t('notifications:webPushDisabled')}
                           </h4>
                           <p style={{ fontSize: '0.75rem', opacity: 0.8 }}>
-                            {isPushEnabled ? t('notifications:pushEnabledInfo') : t('notifications:pushDisabledInfo')}
+                            {isPushEnabled ? t('notifications:webPushDescription') : t('notifications:webPushDescriptionDisabled')}
                           </p>
                         </div>
                         <button

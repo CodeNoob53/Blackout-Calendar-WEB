@@ -12,6 +12,8 @@
   "webPushDisabled": "Веб-пуш вимкнено",
   "webPushDescription": "Сповіщення надходять навіть коли сайт закритий",
   "webPushDescriptionDisabled": "Натисніть кнопку для активації",
+  "notificationsEnabled": "Сповіщення увімкнено",
+  "notificationsEnabledMessage": "Ви будете отримувати важливі оновлення та нагадування про відключення.",
   "enable": "Увімкнути",
   "disable": "Вимкнути",
   "silentMode": "Тихий режим",

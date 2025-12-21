@@ -12,6 +12,8 @@
   "webPushDisabled": "Web push disabled",
   "webPushDescription": "Notifications arrive even when site is closed",
   "webPushDescriptionDisabled": "Click button to activate",
+  "notificationsEnabled": "Notifications enabled",
+  "notificationsEnabledMessage": "You will receive important updates and blackout reminders.",
   "enable": "Enable",
   "disable": "Disable",
   "silentMode": "Silent mode",
