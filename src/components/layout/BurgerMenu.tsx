@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -17,6 +17,7 @@ import {
 import NotificationCenter from '../notifications/NotificationCenter';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 import { useFocusTrap } from '../../hooks/useFocusTrap';
+import { APP_VERSION } from '../../constants/version';
 
 interface BurgerMenuProps {
   isOpen: boolean;
@@ -26,6 +27,8 @@ interface BurgerMenuProps {
   currentQueueData?: any;
   isToday: boolean;
   onOpenNotifications: () => void;
+  onOpenChangelog: () => void;
+  unreadNotificationsCount?: number;
 }
 
 const BurgerMenu: React.FC<BurgerMenuProps> = ({
@@ -35,7 +38,9 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({
   toggleTheme,
   currentQueueData,
   isToday,
-  onOpenNotifications
+  onOpenNotifications,
+  onOpenChangelog,
+  unreadNotificationsCount = 0
 }) => {
   const { t } = useTranslation(['common', 'ui']);
   const menuRef = useFocusTrap(isOpen);
@@ -121,14 +126,14 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({
             <NotificationCenter
               currentQueueData={currentQueueData}
               isToday={isToday}
-              renderTrigger={(unreadCount) => (
+              renderTrigger={() => (
                 <button className="burger-menu-item" onClick={onOpenNotifications}>
                   <div className="burger-menu-item-label flex-center" style={{ gap: '0.75rem' }}>
                     <Bell size={20} style={{ color: 'var(--text-muted)' }} />
                     <span>{t('common:notifications')}</span>
                   </div>
-                  {unreadCount > 0 && (
-                    <span className="badge-notification">{unreadCount}</span>
+                  {unreadNotificationsCount > 0 && (
+                    <span className="badge-notification">{unreadNotificationsCount}</span>
                   )}
                   <ChevronRight size={18} style={{ color: 'var(--text-muted)' }} />
                 </button>
@@ -168,21 +173,28 @@ const BurgerMenu: React.FC<BurgerMenuProps> = ({
               <Info size={16} />
               {t('ui:footer.about')}
             </h4>
-            <button className="burger-menu-link">
+            <button className="burger-menu-link" disabled>
               <Package size={20} />
-              <span>{t('ui:footer.version')}: 2.1.0</span>
+              <span>{t('ui:footer.version')}: {APP_VERSION}</span>
             </button>
-            <button className="burger-menu-link">
+            <button
+              className="burger-menu-link"
+              onClick={() => {
+                onOpenChangelog();
+                onClose();
+              }}
+            >
               <FileText size={20} />
               <span>{t('ui:footer.changelog')}</span>
             </button>
-            <button className="burger-menu-link">
+            <button className="burger-menu-link" disabled>
               <HelpCircle size={20} />
               <span>{t('ui:footer.help')}</span>
             </button>
           </div>
         </div>
       </div>
+
     </>,
     document.body
   );

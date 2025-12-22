@@ -1,5 +1,6 @@
 /* Burger Button - Тільки mobile */
 .burger-button {
+  position: relative;
   display: none;
   width: 2.5rem;
   height: 2.5rem;
@@ -237,6 +238,15 @@ body.menu-open .app-root {
 
 .burger-menu-link:hover {
   background: rgba(255, 255, 255, 0.05);
+}
+
+.burger-menu-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.burger-menu-link:disabled:hover {
+  background: none;
 }
 
 /* Language Accordion */

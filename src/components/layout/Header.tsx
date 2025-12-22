@@ -6,6 +6,7 @@ import ThemeToggle from '../ui/ThemeToggle';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 import BurgerButton from '../ui/BurgerButton';
 import BurgerMenu from './BurgerMenu';
+import ChangelogModal from '../ui/ChangelogModal';
 import { QueueData, FetchStatus } from '../../types';
 
 interface HeaderProps {
@@ -29,6 +30,8 @@ const Header: React.FC<HeaderProps> = ({
   const [showBanner, setShowBanner] = useState(false);
   const [isBurgerOpen, setIsBurgerOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isChangelogOpen, setIsChangelogOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -47,6 +50,7 @@ const Header: React.FC<HeaderProps> = ({
   // Спеціальний обробник для відкриття сповіщень з бургер-меню
   const handleOpenNotificationsFromMenu = () => {
     setIsBurgerOpen(false);
+    setIsChangelogOpen(false);
     setIsNotificationsOpen(true);
   };
 
@@ -55,6 +59,42 @@ const Header: React.FC<HeaderProps> = ({
     setIsNotificationsOpen(false);
     setIsBurgerOpen(true);
   };
+
+  // Підрахунок непрочитаних сповіщень з localStorage
+  useEffect(() => {
+    const updateUnreadCount = () => {
+      try {
+        const saved = localStorage.getItem('notifications_history');
+        if (saved) {
+          const notifications = JSON.parse(saved);
+          const unread = notifications.filter((n: any) => !n.read).length;
+          setUnreadCount(unread);
+        }
+      } catch (e) {
+        console.error('Failed to read notifications:', e);
+      }
+    };
+
+    // Оновлюємо при завантаженні
+    updateUnreadCount();
+
+    // Слухаємо зміни в localStorage
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'notifications_history') {
+        updateUnreadCount();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Періодично перевіряємо (для випадку коли зміни в тому ж табі)
+    const interval = setInterval(updateUnreadCount, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   return (
     <header className="app-header">
@@ -93,6 +133,7 @@ const Header: React.FC<HeaderProps> = ({
           <BurgerButton
             onClick={() => setIsBurgerOpen(true)}
             isOpen={isBurgerOpen}
+            unreadCount={unreadCount}
           />
         </div>
       </div>
@@ -112,6 +153,13 @@ const Header: React.FC<HeaderProps> = ({
         currentQueueData={currentQueueData}
         isToday={isToday}
         onOpenNotifications={handleOpenNotificationsFromMenu}
+        onOpenChangelog={() => setIsChangelogOpen(true)}
+        unreadNotificationsCount={unreadCount}
+      />
+
+      <ChangelogModal
+        isOpen={isChangelogOpen}
+        onClose={() => setIsChangelogOpen(false)}
       />
     </header>
   );
