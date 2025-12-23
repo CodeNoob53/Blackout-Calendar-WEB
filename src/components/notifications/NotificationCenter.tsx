@@ -81,6 +81,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     })()
   );
   const serverUnavailableNotified = useRef(false);
+  const processedEmergencies = useRef<Set<string>>(new Set());
 
   const addNotification = (input: Omit<NotificationItem, 'id' | 'date' | 'read'>) => {
     const newItem: NotificationItem = {
@@ -128,7 +129,18 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
           // Backend sends 'emergency_blackout' for sendEmergencyNotification
           const isEmergency = notification.type === 'emergency' || notification.type === 'emergency_blackout';
 
+          // Дедуплікація аварійних сповіщень (по дню + title)
           if (isEmergency) {
+            const today = new Date().toISOString().split('T')[0];
+            const emergencyKey = `${today}-${notification.title}`;
+
+            if (processedEmergencies.current.has(emergencyKey)) {
+              logger.debug('[NotificationCenter] Emergency notification already processed today, skipping duplicate');
+              return;
+            }
+
+            processedEmergencies.current.add(emergencyKey);
+
             // Можна замінити на гарне модальне вікно в майбутньому
             const alertTitle = i18n.language === 'en' ? 'EMERGENCY' : 'АВАРІЙНЕ ВІДКЛЮЧЕННЯ';
             alert(`🚨 ${alertTitle}\n\n${notification.title}\n${notification.message}`);

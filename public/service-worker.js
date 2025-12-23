@@ -164,6 +164,15 @@ function getNotificationOptions(data) {
   const notificationType = data.data?.type;
   const url = data.data?.url || '/?notifications=open';
 
+  // Generate consistent tag for emergency notifications to prevent duplicates
+  let notificationTag = data.tag || `notification-${Date.now()}`;
+
+  if (notificationType === 'emergency' || notificationType === 'emergency_blackout') {
+    // Use consistent tag for emergency notifications (group by day)
+    const today = new Date().toISOString().split('T')[0];
+    notificationTag = `emergency-${today}`;
+  }
+
   const baseOptions = {
     body: data.body,
     icon: data.icon || '/icon-192x192.png',
@@ -173,8 +182,8 @@ function getNotificationOptions(data) {
       ...data.data,
       url
     },
-    tag: data.tag || `notification-${Date.now()}`,
-    renotify: data.renotify,
+    tag: notificationTag,
+    renotify: notificationType === 'emergency' || notificationType === 'emergency_blackout', // Renotify for emergencies
     silent: false
   };
 
@@ -191,7 +200,7 @@ function getNotificationOptions(data) {
     };
   }
 
-  if (notificationType === 'emergency') {
+  if (notificationType === 'emergency' || notificationType === 'emergency_blackout') {
     // EMERGENCY: Important alert
     return {
       ...baseOptions,

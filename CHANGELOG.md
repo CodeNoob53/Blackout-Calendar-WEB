@@ -69,6 +69,12 @@ All notable changes to this project will be documented in this file.
   - Previous version did not use vulnerable features, but updated for security best practices.
   - Documented in README.md.
 
+- **Emergency Notification Deduplication**:
+  - Fixed issue where emergency notifications were sent multiple times.
+  - Service Worker now uses consistent tag for emergency notifications (grouped by day).
+  - Frontend tracks processed emergency notifications to prevent duplicate alerts.
+  - Emergency notifications now replace previous ones instead of creating new instances.
+
 - **Translation Keys**:
   - Fixed inconsistent translation keys in NotificationCenter (e.g., `subscriptionActivatedMessage` → `subscriptionActivatedDesc`).
   - Updated schedule translations to match backend message format.
