@@ -16,6 +16,9 @@ dist-ssr
 .env
 .env.local
 
+# Lock files (project uses yarn, ignore npm lock)
+package-lock.json
+
 # Editor directories and files
 .vscode/*
 .claude/*
