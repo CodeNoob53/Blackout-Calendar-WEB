@@ -29,6 +29,11 @@ const DEFAULT_SETTINGS: NotificationSettings = {
   scheduleUpdates: true,
   tomorrowSchedule: true,
   silentMode: false,
+  quietHoursEnabled: false,
+  quietHoursStart: '22:00',
+  quietHoursEnd: '08:00',
+  maxDailyNotifications: 10, // Default: 10 per day
+  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Kyiv'
 };
 
 const NotificationCenter: React.FC<NotificationCenterProps> = ({
@@ -300,8 +305,8 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   useEffect(() => {
     localStorage.setItem('notification_settings', JSON.stringify(settings));
 
-    // Зберегти silentMode в IndexedDB для Service Worker
-    const saveSilentMode = async () => {
+    // Save all settings to IndexedDB for Service Worker
+    const saveSettingsToIndexedDB = async () => {
       try {
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
           const request = indexedDB.open('NotificationSettings', 1);
@@ -317,7 +322,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
         const tx = db.transaction('settings', 'readwrite');
         const store = tx.objectStore('settings');
+
+        // Save all settings individually so SW can read them
         store.put(settings.silentMode, 'silentMode');
+        store.put(settings.quietHoursEnabled, 'quietHoursEnabled');
+        store.put(settings.quietHoursStart, 'quietHoursStart');
+        store.put(settings.quietHoursEnd, 'quietHoursEnd');
+        store.put(settings.maxDailyNotifications, 'maxDailyNotifications');
+        store.put(settings.timezone, 'timezone');
 
         await new Promise<void>((resolve, reject) => {
           tx.oncomplete = () => resolve();
@@ -326,11 +338,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
         db.close();
       } catch (error) {
-        logger.error('Failed to save silent mode to IndexedDB:', error);
+        logger.error('Failed to save settings to IndexedDB:', error);
       }
     };
 
-    saveSilentMode();
+    saveSettingsToIndexedDB();
   }, [settings]);
 
   useEffect(() => {
@@ -943,6 +955,97 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                         </button>
                       </div>
                     ))}
+
+                    {/* Quiet Hours Setting */}
+                    <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <div style={{ display: 'flex', width: '100%', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ flex: 1 }}>
+                          <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '2px' }}>
+                            {t('notifications:quietHours')}
+                          </h4>
+                          <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                            {t('notifications:quietHoursDesc')}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setSettings(s => ({ ...s, quietHoursEnabled: !s.quietHoursEnabled }))}
+                          className={`toggle-switch ${settings.quietHoursEnabled ? 'on' : ''}`}
+                        >
+                          <div className="toggle-thumb" />
+                        </button>
+                      </div>
+
+                      {settings.quietHoursEnabled && (
+                        <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '8px' }}>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                              {t('notifications:quietHoursStart')}
+                            </label>
+                            <input
+                              type="time"
+                              value={settings.quietHoursStart}
+                              onChange={(e) => setSettings(s => ({ ...s, quietHoursStart: e.target.value }))}
+                              style={{
+                                width: '100%',
+                                padding: '8px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border-color)',
+                                backgroundColor: 'var(--bg-secondary)',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.875rem'
+                              }}
+                            />
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <label style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'block', marginBottom: '4px' }}>
+                              {t('notifications:quietHoursEnd')}
+                            </label>
+                            <input
+                              type="time"
+                              value={settings.quietHoursEnd}
+                              onChange={(e) => setSettings(s => ({ ...s, quietHoursEnd: e.target.value }))}
+                              style={{
+                                width: '100%',
+                                padding: '8px',
+                                borderRadius: '6px',
+                                border: '1px solid var(--border-color)',
+                                backgroundColor: 'var(--bg-secondary)',
+                                color: 'var(--text-primary)',
+                                fontSize: '0.875rem'
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Daily Limit Setting */}
+                    <div className="setting-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
+                      <div style={{ width: '100%' }}>
+                        <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: '2px' }}>
+                          {t('notifications:maxDailyNotifications')}
+                        </h4>
+                        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '8px' }}>
+                          {t('notifications:maxDailyNotificationsDesc')}
+                        </p>
+                        <input
+                          type="number"
+                          min="0"
+                          max="50"
+                          value={settings.maxDailyNotifications}
+                          onChange={(e) => setSettings(s => ({ ...s, maxDailyNotifications: parseInt(e.target.value) || 0 }))}
+                          style={{
+                            width: '100%',
+                            padding: '8px',
+                            borderRadius: '6px',
+                            border: '1px solid var(--border-color)',
+                            backgroundColor: 'var(--bg-secondary)',
+                            color: 'var(--text-primary)',
+                            fontSize: '0.875rem'
+                          }}
+                        />
+                      </div>
+                    </div>
 
                   </div>
                 </div>

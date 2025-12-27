@@ -33,5 +33,13 @@
   "subscriptionDeactivated": "🔕 Subscription disabled",
   "subscriptionDeactivatedDesc": "You will no longer receive push notifications",
   "subscriptionRestored": "🔄 Subscription restored",
-  "subscriptionRestoredDesc": "Blackout notifications are working again"
+  "subscriptionRestoredDesc": "Blackout notifications are working again",
+  "quietHours": "Quiet hours",
+  "quietHoursDesc": "Do not disturb during specific hours",
+  "quietHoursStart": "Start",
+  "quietHoursEnd": "End",
+  "maxDailyNotifications": "Daily limit",
+  "maxDailyNotificationsDesc": "Maximum notifications (0 = unlimited)",
+  "timezone": "Timezone",
+  "timezoneDesc": "For accurate time calculations"
 }

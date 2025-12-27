@@ -55,6 +55,21 @@ export interface NotificationSettings {
   scheduleUpdates: boolean; // Alert when schedule changes
   tomorrowSchedule: boolean;// Alert when tomorrow's schedule is available
   silentMode: boolean;      // No system notifications, only in-app (when browser open)
+  quietHoursEnabled: boolean; // Enable quiet hours (Do-Not-Disturb)
+  quietHoursStart: string;  // Quiet hours start time (HH:mm format, e.g., "22:00")
+  quietHoursEnd: string;    // Quiet hours end time (HH:mm format, e.g., "08:00")
+  maxDailyNotifications: number; // Maximum notifications per day (0 = unlimited)
+  timezone: string;         // User's timezone (e.g., "Europe/Kyiv")
+}
+
+// Notification Analytics
+export interface NotificationAnalytics {
+  notificationId: string;
+  type: string;
+  deliveredAt: number;
+  clickedAt?: number;
+  dismissedAt?: number;
+  action?: string; // Which action button was clicked
 }
 
 export interface NotificationItem {
