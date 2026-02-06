@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+﻿import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSquare, ChevronLeft } from 'lucide-react';
@@ -84,6 +84,27 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const serverUnavailableNotified = useRef(false);
   const processedEmergencies = useRef<Set<string>>(new Set());
 
+  const pruneProcessedUpdateIds = (ids: Set<string>, maxAgeDays: number): Set<string> => {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - maxAgeDays);
+    const cutoffTime = cutoff.getTime();
+    const next = new Set<string>();
+
+    ids.forEach((id) => {
+      const parts = id.split('-');
+      if (parts.length >= 4) {
+        const dateStr = `${parts[1]}-${parts[2]}-${parts[3]}`;
+        const parsed = new Date(dateStr);
+        if (!Number.isNaN(parsed.getTime()) && parsed.getTime() < cutoffTime) {
+          return;
+        }
+      }
+      next.add(id);
+    });
+
+    return next;
+  };
+
   const addNotification = (input: Omit<NotificationItem, 'id' | 'date' | 'read'>) => {
     const newItem: NotificationItem = {
       id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -91,7 +112,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
       read: false,
       ...input
     };
-    setNotifications(prev => [newItem, ...prev]);
+    setNotifications(prev => [newItem, ...prev].slice(0, 50));
   };
 
   const notifyServerUnavailable = () => {
@@ -99,7 +120,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
     addNotification({
       title: t('notifications:serverUnavailable'),
-      message: t('notifications:serverUnavailableMessage'),
+      message: t('notifications:serverUnavailableDesc'),
       type: 'warning'
     });
 
@@ -117,7 +138,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     checkPushSubscription();
     loadNotificationsFromIndexedDB();
 
-    // Слухати повідомлення від Service Worker
+    // РЎР»СѓС…Р°С‚Рё РїРѕРІС–РґРѕРјР»РµРЅРЅСЏ РІС–Рґ Service Worker
     if ('serviceWorker' in navigator) {
       const messageHandler = (event: MessageEvent) => {
         logger.debug('[NotificationCenter] Received message from SW:', event.data);
@@ -126,11 +147,11 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
           const { notification } = event.data;
           logger.debug('[NotificationCenter] Processing PUSH_NOTIFICATION:', notification);
 
-          // Для аварійних ситуацій показуємо системний alert або модальне вікно (тут поки alert для надійності)
+          // Р”Р»СЏ Р°РІР°СЂС–Р№РЅРёС… СЃРёС‚СѓР°С†С–Р№ РїРѕРєР°Р·СѓС”РјРѕ СЃРёСЃС‚РµРјРЅРёР№ alert Р°Р±Рѕ РјРѕРґР°Р»СЊРЅРµ РІС–РєРЅРѕ (С‚СѓС‚ РїРѕРєРё alert РґР»СЏ РЅР°РґС–Р№РЅРѕСЃС‚С–)
           // Backend sends 'emergency_blackout' for sendEmergencyNotification
           const isEmergency = notification.type === 'emergency' || notification.type === 'emergency_blackout';
 
-          // Дедуплікація аварійних сповіщень (по дню + title)
+          // Р”РµРґСѓРїР»С–РєР°С†С–СЏ Р°РІР°СЂС–Р№РЅРёС… СЃРїРѕРІС–С‰РµРЅСЊ (РїРѕ РґРЅСЋ + title)
           if (isEmergency) {
             const today = new Date().toISOString().split('T')[0];
             const emergencyKey = `${today}-${notification.title}`;
@@ -142,9 +163,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
 
             processedEmergencies.current.add(emergencyKey);
 
-            // Можна замінити на гарне модальне вікно в майбутньому
-            const alertTitle = i18n.language === 'en' ? 'EMERGENCY' : 'АВАРІЙНЕ ВІДКЛЮЧЕННЯ';
-            alert(`🚨 ${alertTitle}\n\n${notification.title}\n${notification.message}`);
+            // РњРѕР¶РЅР° Р·Р°РјС–РЅРёС‚Рё РЅР° РіР°СЂРЅРµ РјРѕРґР°Р»СЊРЅРµ РІС–РєРЅРѕ РІ РјР°Р№Р±СѓС‚РЅСЊРѕРјСѓ
+            const alertTitle = i18n.language === 'en' ? 'EMERGENCY' : 'РђР’РђР Р†Р™РќР• Р’Р†Р”РљР›Р®Р§Р•РќРќРЇ';
+            alert(`рџљЁ ${alertTitle}\n\n${notification.title}\n${notification.message}`);
           }
 
           addNotification({
@@ -182,6 +203,21 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     }
   }, []);
 
+  const openNotificationsDb = async (): Promise<IDBDatabase> => {
+    return await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open('NotificationHistory', 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains('notifications')) {
+          const store = db.createObjectStore('notifications', { keyPath: 'id', autoIncrement: true });
+          store.createIndex('timestamp', 'timestamp', { unique: false });
+        }
+      };
+    });
+  };
+
   const loadNotificationsFromIndexedDB = async () => {
     try {
       // Load from localStorage first
@@ -197,18 +233,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
       }
 
       // Load from IndexedDB
-      const db = await new Promise<IDBDatabase>((resolve, reject) => {
-        const request = indexedDB.open('NotificationHistory', 1);
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => resolve(request.result);
-        request.onupgradeneeded = (event) => {
-          const db = (event.target as IDBOpenDBRequest).result;
-          if (!db.objectStoreNames.contains('notifications')) {
-            const store = db.createObjectStore('notifications', { keyPath: 'id', autoIncrement: true });
-            store.createIndex('timestamp', 'timestamp', { unique: false });
-          }
-        };
-      });
+      const db = await openNotificationsDb();
 
       const tx = db.transaction('notifications', 'readonly');
       const store = tx.objectStore('notifications');
@@ -301,7 +326,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   useEffect(() => {
     localStorage.setItem('notification_settings', JSON.stringify(settings));
 
-    // Зберегти silentMode в IndexedDB для Service Worker
+    // Р—Р±РµСЂРµРіС‚Рё silentMode РІ IndexedDB РґР»СЏ Service Worker
     const saveSilentMode = async () => {
       try {
         const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -540,37 +565,6 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     return () => clearInterval(checkInterval);
   }, [settings.lightAlerts, settings.nightMode, currentQueueData, isToday]);
 
-  // Verify and restore subscription when currentQueueData becomes available
-  useEffect(() => {
-    if (pushSubscription && currentQueueData && isPushEnabled) {
-      const verifySubscription = async () => {
-        try {
-          await updateNotificationQueue(pushSubscription.endpoint, currentQueueData.queue, ['all']);
-          logger.debug('Subscription verified on backend');
-        } catch (error: any) {
-          if (axios.isAxiosError(error) && error.response?.status === 404) {
-            logger.warn('Subscription lost on backend (DB reset?), auto-restoring...');
-            try {
-              await subscribeToPushNotifications(pushSubscription, currentQueueData.queue, ['all']);
-              logger.debug('✅ Subscription auto-restored successfully!');
-
-              addNotification({
-                title: t('notifications:subscriptionRestored'),
-                message: t('notifications:subscriptionRestoredDesc'),
-                type: 'success'
-              });
-            } catch (restoreError) {
-              logger.error('Failed to auto-restore subscription:', restoreError);
-            }
-          }
-        }
-      };
-
-      // Run verification after a short delay
-      const timeoutId = setTimeout(verifySubscription, 1000);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [currentQueueData, pushSubscription, isPushEnabled, i18n.language]);
 
   useEffect(() => {
     if (pushSubscription && currentQueueData) {
@@ -593,6 +587,12 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
               // Re-subscribe to backend with queue in single atomic call
               await subscribeToPushNotifications(pushSubscription, currentQueueData.queue, ['all']);
               logger.debug('Re-subscribed to backend successfully with queue');
+
+              addNotification({
+                title: t('notifications:subscriptionRestored'),
+                message: t('notifications:subscriptionRestoredDesc'),
+                type: 'success'
+              });
             } catch (finalError) {
               logger.error('Failed to re-subscribe to backend:', finalError);
             }
@@ -680,7 +680,9 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         });
 
         // Update storage once after processing all dates
-        localStorage.setItem('notification_processed_updates', JSON.stringify(Array.from(processedUpdateIds.current)));
+        const pruned = pruneProcessedUpdateIds(processedUpdateIds.current, 30);
+        processedUpdateIds.current = pruned;
+        localStorage.setItem('notification_processed_updates', JSON.stringify(Array.from(pruned)));
       };
 
 
@@ -744,8 +746,29 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     setNotifications(prev => prev.map(n => ({ ...n, read: true })));
   };
 
-  const clearHistory = () => {
+  const clearNotificationsDb = async () => {
+    try {
+      const db = await openNotificationsDb();
+      const tx = db.transaction('notifications', 'readwrite');
+      tx.objectStore('notifications').clear();
+      await new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+      });
+      db.close();
+    } catch (error) {
+      logger.error('Failed to clear notifications in IndexedDB:', error);
+    }
+  };
+
+  const clearHistory = async () => {
     setNotifications([]);
+    try {
+      localStorage.removeItem('notifications_history');
+    } catch (e) {
+      logger.error('Failed to clear notifications from localStorage:', e);
+    }
+    await clearNotificationsDb();
   };
 
   const unreadCount = notifications.filter(n => !n.read).length;
