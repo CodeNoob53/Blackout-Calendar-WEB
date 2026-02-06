@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.2] - 2026-02-06
+
+### Added
+- Notification system refactor into dedicated hooks (history, settings, push, polling, SW messages, system notifications).
+
+### Improved
+- Schedule alerts are now more reliable with a time window and midnight-crossing handling.
+
+### Fixed
+- Notification history clear now removes IndexedDB + localStorage entries.
+- Fixed missing i18n key for server-unavailable notification message.
+
+---
+
 ## [2.2.1] - 2026-02-06
 
 ### Fixed
