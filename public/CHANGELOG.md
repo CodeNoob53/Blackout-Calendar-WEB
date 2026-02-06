@@ -2,6 +2,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.1] - 2026-02-06
+
+### Fixed
+- Restored offline fallback to show cached schedules when the API is unavailable or the user has no connection.
+
+### Changed
+- Refactored initial schedule fetching to Axios.
+- Rewrote layout markup with semantic HTML tags.
+
+---
+
 ## [2.2.0] - 2025-12-22
 
 ### Added
