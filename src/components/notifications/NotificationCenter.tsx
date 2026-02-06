@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { Bell, X, Trash2, Check, AlertTriangle, CheckCircle, Calendar, MessageSquare, ChevronLeft } from 'lucide-react';
 import { NotificationSettings, NotificationItem, QueueData } from '../../types';
+import axios from 'axios';
 import {
   fetchNewSchedules,
   fetchChangedSchedules,
@@ -547,7 +548,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
           await updateNotificationQueue(pushSubscription.endpoint, currentQueueData.queue, ['all']);
           logger.debug('Subscription verified on backend');
         } catch (error: any) {
-          if (error.message?.includes('404') || error.message?.includes('not found')) {
+          if (axios.isAxiosError(error) && error.response?.status === 404) {
             logger.warn('Subscription lost on backend (DB reset?), auto-restoring...');
             try {
               await subscribeToPushNotifications(pushSubscription, currentQueueData.queue, ['all']);
@@ -587,7 +588,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
           logger.warn('Failed to update queue, subscription might be missing on backend. Attempting to re-sync...', error);
 
           // If 404 - subscription not found, re-register it on backend
-          if (error.message?.includes('404') || error.message?.includes('not found')) {
+          if (axios.isAxiosError(error) && error.response?.status === 404) {
             try {
               // Re-subscribe to backend with queue in single atomic call
               await subscribeToPushNotifications(pushSubscription, currentQueueData.queue, ['all']);

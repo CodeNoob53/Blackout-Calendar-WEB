@@ -84,6 +84,17 @@
   border: 1px solid var(--border-color);
 }
 
+.state-icon-box--danger {
+  background: var(--danger-bg);
+  color: var(--danger-text);
+  border-color: var(--danger-text);
+}
+
+.state-icon-box--warning {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
 .spin-icon {
   animation: spin 1s linear infinite;
 }
@@ -138,6 +149,11 @@
   box-shadow: 0 1px 2px 0 var(--shadow-color);
 }
 
+.outage-chip-icon {
+  margin-right: 0.5rem;
+  opacity: 0.8;
+}
+
 .no-outages-msg {
   grid-column: 1 / -1;
   display: flex;
@@ -149,4 +165,8 @@
   color: var(--success-text);
   border: 1px solid var(--border-color);
   font-weight: 500;
+}
+
+.no-outages-icon {
+  margin-right: 0.75rem;
 }

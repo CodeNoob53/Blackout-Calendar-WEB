@@ -28,7 +28,7 @@ const Timeline: React.FC<TimelineProps> = ({ intervals, isToday }) => {
   }, [isToday]);
 
   return (
-    <div className="timeline-container">
+    <div className="timeline-container" aria-hidden="true">
       {/* Background track */}
       <div className="timeline-track">
 

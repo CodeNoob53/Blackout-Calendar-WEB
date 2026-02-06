@@ -117,9 +117,9 @@ const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Desktop controls */}
-          <div className="header-desktop-controls">
-            <NotificationCenter 
-              currentQueueData={currentQueueData} 
+          <nav className="header-desktop-controls" aria-label={t('common:settings')}>
+            <NotificationCenter
+              currentQueueData={currentQueueData}
               isToday={isToday}
               isOpen={isNotificationsOpen}
               onOpenChange={setIsNotificationsOpen}
@@ -127,7 +127,7 @@ const Header: React.FC<HeaderProps> = ({
             />
             <LanguageSwitcher isMobile={false} />
             <ThemeToggle theme={theme} toggleTheme={toggleTheme} />
-          </div>
+          </nav>
 
           {/* Mobile burger button */}
           <BurgerButton
@@ -139,8 +139,8 @@ const Header: React.FC<HeaderProps> = ({
       </div>
 
       {showBanner && (
-         <div className="offline-banner">
-            <WifiOff size={12} />
+         <div className="offline-banner" role="alert">
+            <WifiOff size={12} aria-hidden="true" />
             {t('ui:header.offline')}
          </div>
       )}

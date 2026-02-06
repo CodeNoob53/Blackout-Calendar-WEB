@@ -14,7 +14,9 @@
   "dateSelector": {
     "today": "Сьогодні",
     "yesterday": "Вчора",
-    "tomorrow": "Завтра"
+    "tomorrow": "Завтра",
+    "sectionLabel": "Годинник та вибір дати",
+    "groupLabel": "Оберіть дату"
   },
   "footer": {
     "copyright": "© {{year}} Blackout Calendar.",

@@ -13,16 +13,18 @@ const Clock: React.FC = () => {
   const hours = time.getHours().toString().padStart(2, '0');
   const minutes = time.getMinutes().toString().padStart(2, '0');
 
+  const datetime = `${hours}:${minutes}`;
+
   return (
-    <div className="clock-container">
+    <div className="clock-container" role="timer" aria-label={t('clock.now')} aria-atomic="true">
       <span className="clock-label">
         {t('clock.now')}
       </span>
-      <div className="clock-time">
+      <time className="clock-time" dateTime={datetime}>
         <span>{hours}</span>
-        <span className="blink-colon">:</span>
+        <span className="blink-colon" aria-hidden="true">:</span>
         <span>{minutes}</span>
-      </div>
+      </time>
     </div>
   );
 };

@@ -1,33 +1,18 @@
+import axios, { AxiosError } from 'axios';
 import { ScheduleResponse, DateListResponse, AddressSearchResponse, CachedScheduleData, NewSchedulesResponse, ChangedSchedulesResponse } from '../types';
 
-// Використовуємо relative path для роботи через проксі (dev) або nginx (prod)
-const BASE_URL = '/api';
+// Axios instance with base config
+const apiClient = axios.create({
+  baseURL: '/api',
+  timeout: 15000,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+export { apiClient };
 
 export const CACHE_KEYS = {
   LATEST_SCHEDULE: 'cached_schedule_latest',
   SCHEDULE_PREFIX: 'cached_schedule_',
-};
-
-// Helper to handle slow server wake-ups (Render free tier)
-const fetchWithTimeout = async (url: string, timeout = 15000): Promise<Response> => {
-  const controller = new AbortController();
-  const id = setTimeout(() => {
-    // Providing a reason is crucial to prevent "signal is aborted without reason" error
-    controller.abort(new Error('Request timed out'));
-  }, timeout);
-
-  try {
-    const response = await fetch(url, { signal: controller.signal });
-    clearTimeout(id);
-    return response;
-  } catch (error: any) {
-    clearTimeout(id);
-    // Handle AbortError specifically or check if signal was aborted with our reason
-    if (error.name === 'AbortError' || (controller.signal.aborted && controller.signal.reason?.message === 'Request timed out')) {
-      throw new Error(`Request timed out after ${timeout}ms`);
-    }
-    throw error;
-  }
 };
 
 // --- Caching Utilities ---
@@ -49,114 +34,103 @@ export const getFromCache = <T>(key: string): T | null => {
     const cached = localStorage.getItem(key);
     if (!cached) return null;
     const parsed: CachedScheduleData = JSON.parse(cached);
-    // Optional: Add expiration logic here (e.g., 24 hours)
-    // if (Date.now() - parsed.timestamp > 24 * 60 * 60 * 1000) return null;
     return parsed.data as T;
   } catch (e) {
     return null;
   }
 };
 
+// --- Helper: check if error is 503 ---
+
+const is503 = (error: unknown): boolean =>
+  error instanceof AxiosError && error.response?.status === 503;
+
 // --- API Methods ---
 
 export const fetchLatestSchedule = async (): Promise<ScheduleResponse> => {
-  const response = await fetchWithTimeout(`${BASE_URL}/schedules/latest`);
-  if (!response.ok) {
-    if (response.status === 503) {
+  try {
+    const { data } = await apiClient.get<ScheduleResponse>('/schedules/latest');
+    return data;
+  } catch (error) {
+    if (is503(error)) {
       console.warn('Schedules API temporarily unavailable (latest)');
       return { success: false, date: '', queues: [], serviceUnavailable: true };
     }
-    throw new Error('Failed to fetch latest schedule');
+    throw error;
   }
-  return response.json();
 };
 
-export const fetchScheduleByDate = async (date: string): Promise<ScheduleResponse | null> => {
-  // Try cache first for specific dates (optional, but good for UX)
-  // const cached = getFromCache<ScheduleResponse>(`${CACHE_KEYS.SCHEDULE_PREFIX}${date}`);
-  // if (cached) return cached;
-
-  const response = await fetchWithTimeout(`${BASE_URL}/schedules/${date}`);
-  if (response.status === 404) return null;
-  if (!response.ok) {
-    if (response.status === 503) {
+export const fetchScheduleByDate = async (date: string): Promise<ScheduleResponse> => {
+  try {
+    const { data } = await apiClient.get<ScheduleResponse>(`/schedules/${date}`);
+    // Cache only when data is available
+    if (data.success && data.available !== false) {
+      saveToCache(`${CACHE_KEYS.SCHEDULE_PREFIX}${date}`, data);
+    }
+    return data;
+  } catch (error) {
+    if (is503(error)) {
       console.warn('Schedules API temporarily unavailable');
       return { success: false, date, queues: [], serviceUnavailable: true };
     }
-    throw new Error(`Failed to fetch schedule for ${date}`);
+    // Try to extract error message from API response body
+    if (error instanceof AxiosError && error.response?.data) {
+      const body = error.response.data;
+      return { success: false, date, queues: [], error: body.error || body.message };
+    }
+    throw error;
   }
-
-  const data = await response.json();
-  // Cache successful responses
-  if (data.success) {
-    saveToCache(`${CACHE_KEYS.SCHEDULE_PREFIX}${date}`, data);
-  }
-  return data;
 };
 
 export const fetchAvailableDates = async (): Promise<DateListResponse> => {
-  const response = await fetchWithTimeout(`${BASE_URL}/schedules/dates`);
-  if (!response.ok) throw new Error('Failed to fetch dates');
-  return response.json();
+  const { data } = await apiClient.get<DateListResponse>('/schedules/dates');
+  return data;
 };
 
 export const searchAddress = async (query: string): Promise<AddressSearchResponse> => {
   if (query.length < 3) return { success: true, query, count: 0, addresses: [] };
-  const response = await fetchWithTimeout(`${BASE_URL}/addresses/search?q=${encodeURIComponent(query)}`);
-  if (!response.ok) throw new Error('Failed to search address');
-  return response.json();
+  const { data } = await apiClient.get<AddressSearchResponse>('/addresses/search', {
+    params: { q: query },
+  });
+  return data;
 };
 
 // --- Updates API ---
 
 export const fetchNewSchedules = async (hours = 24): Promise<NewSchedulesResponse> => {
-  const response = await fetchWithTimeout(`${BASE_URL}/updates/new?hours=${hours}`);
-
-  if (!response.ok) {
-    if (response.status === 503) {
+  try {
+    const { data } = await apiClient.get<NewSchedulesResponse>('/updates/new', {
+      params: { hours },
+    });
+    return data;
+  } catch (error) {
+    if (is503(error)) {
       console.warn('Updates API temporarily unavailable (new schedules)');
       return { success: true, count: 0, schedules: [], serviceUnavailable: true };
     }
-    throw new Error('Failed to fetch new schedules');
+    throw error;
   }
-
-  // Check if response is actually JSON
-  const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-    console.warn('API returned non-JSON response for new schedules');
-    return { success: true, count: 0, schedules: [] };
-  }
-
-  return response.json();
 };
 
 export const fetchChangedSchedules = async (hours = 24): Promise<ChangedSchedulesResponse> => {
-  const response = await fetchWithTimeout(`${BASE_URL}/updates/changed?hours=${hours}`);
-
-  if (!response.ok) {
-    if (response.status === 503) {
+  try {
+    const { data } = await apiClient.get<ChangedSchedulesResponse>('/updates/changed', {
+      params: { hours },
+    });
+    return data;
+  } catch (error) {
+    if (is503(error)) {
       console.warn('Updates API temporarily unavailable (changed schedules)');
       return { success: true, count: 0, schedules: [], serviceUnavailable: true };
     }
-    throw new Error('Failed to fetch changed schedules');
+    throw error;
   }
-
-  // Check if response is actually JSON
-  const contentType = response.headers.get('content-type');
-  if (!contentType || !contentType.includes('application/json')) {
-    console.warn('API returned non-JSON response for changed schedules');
-    return { success: true, count: 0, schedules: [] };
-  }
-
-  return response.json();
 };
 
 // --- Push Notifications API ---
 
 export const getVapidPublicKey = async (): Promise<string> => {
-  const response = await fetchWithTimeout(`${BASE_URL}/notifications/vapid-key`);
-  if (!response.ok) throw new Error('Failed to fetch VAPID key');
-  const data = await response.json();
+  const { data } = await apiClient.get<{ publicKey: string }>('/notifications/vapid-key');
   return data.publicKey;
 };
 
@@ -167,7 +141,6 @@ export const subscribeToPushNotifications = async (
 ): Promise<boolean> => {
   const payload: any = subscription.toJSON();
 
-  // Add optional queue and notificationTypes
   if (queue !== undefined && queue !== null) {
     payload.queue = queue;
   }
@@ -175,26 +148,12 @@ export const subscribeToPushNotifications = async (
     payload.notificationTypes = notificationTypes;
   }
 
-  const response = await fetch(`${BASE_URL}/notifications/subscribe`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload)
-  });
-
-  if (!response.ok) throw new Error('Failed to subscribe to push notifications');
-  const data = await response.json();
+  const { data } = await apiClient.post<{ success: boolean }>('/notifications/subscribe', payload);
   return data.success;
 };
 
 export const unsubscribeFromPushNotifications = async (endpoint: string): Promise<boolean> => {
-  const response = await fetch(`${BASE_URL}/notifications/unsubscribe`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ endpoint })
-  });
-
-  if (!response.ok) throw new Error('Failed to unsubscribe from push notifications');
-  const data = await response.json();
+  const { data } = await apiClient.post<{ success: boolean }>('/notifications/unsubscribe', { endpoint });
   return data.success;
 };
 
@@ -203,28 +162,19 @@ export const updateNotificationQueue = async (
   queue: string | null,
   notificationTypes?: string[]
 ): Promise<boolean> => {
-  const response = await fetch(`${BASE_URL}/notifications/update-queue`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ endpoint, queue, notificationTypes })
+  const { data } = await apiClient.post<{ success: boolean }>('/notifications/update-queue', {
+    endpoint,
+    queue,
+    notificationTypes,
   });
-
-  if (!response.ok) {
-    // Include status code in error message for better error handling
-    if (response.status === 404) {
-      throw new Error('Subscription not found (404)');
-    }
-    throw new Error(`Failed to update notification queue (${response.status})`);
-  }
-  const data = await response.json();
   return data.success;
 };
 
 export const checkHealth = async (): Promise<boolean> => {
   try {
-    const response = await fetchWithTimeout(`${BASE_URL}/healthz`, 5000);
-    return response.ok;
-  } catch (error) {
+    await apiClient.get('/healthz', { timeout: 5000 });
+    return true;
+  } catch {
     return false;
   }
 };

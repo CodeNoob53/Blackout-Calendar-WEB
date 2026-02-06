@@ -14,7 +14,9 @@
   "dateSelector": {
     "today": "Today",
     "yesterday": "Yesterday",
-    "tomorrow": "Tomorrow"
+    "tomorrow": "Tomorrow",
+    "sectionLabel": "Clock and date selection",
+    "groupLabel": "Select date"
   },
   "footer": {
     "copyright": "© {{year}} Blackout Calendar.",

@@ -3,19 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { Github } from 'lucide-react';
 
 const Footer: React.FC = () => {
-  const { t } = useTranslation('ui');
+  const { t } = useTranslation(['ui', 'common']);
 
   return (
     <footer className="app-footer">
-      <div className="github-links">
+      <nav className="github-links" aria-label={t('common:appTitle')}>
         <a
           href="https://github.com/CodeNoob53/blackout_calendar"
           target="_blank"
           rel="noopener noreferrer"
           className="github-btn"
         >
-          <Github size={16} />
-          <span>{t('footer.apiLink')}</span>
+          <Github size={16} aria-hidden="true" />
+          <span>{t('ui:footer.apiLink')}</span>
         </a>
 
         <a
@@ -24,17 +24,17 @@ const Footer: React.FC = () => {
           rel="noopener noreferrer"
           className="github-btn"
         >
-          <Github size={16} />
-          <span>{t('footer.webLink')}</span>
+          <Github size={16} aria-hidden="true" />
+          <span>{t('ui:footer.webLink')}</span>
         </a>
-      </div>
+      </nav>
 
       <div className="footer-info">
         <p className="footer-copyright">
-          {t('footer.copyright', { year: new Date().getFullYear() })}
+          {t('ui:footer.copyright', { year: new Date().getFullYear() })}
         </p>
         <p className="footer-disclaimer">
-          {t('footer.disclaimer')}
+          {t('ui:footer.disclaimer')}
         </p>
       </div>
     </footer>

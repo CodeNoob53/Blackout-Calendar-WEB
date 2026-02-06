@@ -12,6 +12,8 @@ export interface ScheduleResponse {
   success: boolean;
   date: string;
   queues: QueueData[];
+  available?: boolean;
+  message?: string;
   error?: string;
   serviceUnavailable?: boolean;
 }

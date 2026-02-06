@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { fetchLatestSchedule, fetchScheduleByDate, getFromCache, saveToCache, checkHealth, CACHE_KEYS } from './services/api';
+import { fetchLatestSchedule, fetchScheduleByDate, getFromCache, CACHE_KEYS } from './services/api';
 import { ScheduleResponse, FetchStatus, QueueData } from './types';
 import Timeline from './components/schedule/Timeline';
 import Clock from './components/ui/Clock';
@@ -79,12 +79,11 @@ const App: React.FC = () => {
         setIsUsingCache(true);
       }
 
-      let wakeUpTimer: ReturnType<typeof setTimeout> | null = null;
-
       try {
         setServerUnavailable(false);
-        let data = await fetchScheduleByDate(selectedDate).catch(() => null);
+        let data: ScheduleResponse | null = await fetchScheduleByDate(selectedDate).catch(() => null);
 
+        // Fallback to /latest for today if specific date request failed
         if (!data && selectedDate === getLocalISODate()) {
           const latest = await fetchLatestSchedule().catch(() => null);
           if (latest && latest.date === selectedDate) {
@@ -96,7 +95,6 @@ const App: React.FC = () => {
           setServerUnavailable(true);
           if (!cachedData) {
             setScheduleData(null);
-            setIsUsingCache(false);
             setStatus('error');
           } else {
             setStatus('success');
@@ -106,18 +104,14 @@ const App: React.FC = () => {
 
         if (data) {
           setScheduleData(data);
-          setStatus('success');
           setIsUsingCache(false);
-          saveToCache(cachedKey, data);
+          setStatus('success');
         } else if (!cachedData) {
           setScheduleData(null);
           setIsUsingCache(false);
           setStatus('success');
         } else {
-          if (data === null) {
-            setIsUsingCache(false);
-            setStatus('success');
-          }
+          setStatus('success');
         }
       } catch (err) {
         console.error("Network error:", err);
@@ -156,7 +150,7 @@ const App: React.FC = () => {
 
     try {
       const data = await fetchScheduleByDate(date);
-      if (data?.serviceUnavailable) {
+      if (data.serviceUnavailable) {
         setServerUnavailable(true);
         if (!cachedData) {
           setScheduleData(null);
@@ -167,22 +161,12 @@ const App: React.FC = () => {
         }
         return;
       }
-      if (data) {
-        setScheduleData(data);
-        setIsUsingCache(false);
-        setStatus('success');
-      } else if (!cachedData) {
-        setScheduleData(null);
-        setIsUsingCache(false);
-        setStatus('success');
-      } else {
-        setScheduleData(null);
-        setIsUsingCache(false);
-        setStatus('success');
-      }
+      setScheduleData(data);
+      setIsUsingCache(false);
+      setStatus('success');
     } catch (err) {
       if (!cachedData) setScheduleData(null);
-      setStatus('success');
+      setStatus('error');
     }
   };
 
@@ -191,7 +175,7 @@ const App: React.FC = () => {
   };
 
   const currentQueueData: QueueData | undefined = useMemo(() => {
-    return scheduleData?.queues.find(q => q.queue === viewQueue);
+    return scheduleData?.queues?.find(q => q.queue === viewQueue);
   }, [scheduleData, viewQueue]);
 
   const isToday = useMemo(() => {
@@ -215,26 +199,31 @@ const App: React.FC = () => {
       <main className="container">
 
         {/* TOP SECTION: Clock & Date Selector */}
-        <section className="glass-card top-section">
+        <section className="glass-card top-section" aria-label={t('ui:dateSelector.sectionLabel')}>
           <Clock />
 
           {/* Date Buttons */}
-          {dateOptions.map((opt) => {
-            const isSelected = selectedDate === opt.iso;
-            return (
-              <button
-                key={opt.iso}
-                onClick={() => handleDateChange(opt.iso)}
-                className={`date-btn ${isSelected ? 'active' : ''}`}
-              >
-                <span className="date-weekday">{opt.weekday}</span>
-                <span className="date-day">{opt.day}</span>
-                {opt.isToday && !isSelected && (
-                  <span className="today-dot"></span>
-                )}
-              </button>
-            );
-          })}
+          <div role="radiogroup" aria-label={t('ui:dateSelector.groupLabel')}>
+            {dateOptions.map((opt) => {
+              const isSelected = selectedDate === opt.iso;
+              return (
+                <button
+                  key={opt.iso}
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => handleDateChange(opt.iso)}
+                  className={`date-btn ${isSelected ? 'active' : ''}`}
+                  {...(opt.isToday ? { 'aria-current': 'date' as const } : {})}
+                >
+                  <span className="date-weekday">{opt.weekday}</span>
+                  <span className="date-day">{opt.day}</span>
+                  {opt.isToday && !isSelected && (
+                    <span className="today-dot"></span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         {/* Queue Selector */}
@@ -249,10 +238,12 @@ const App: React.FC = () => {
               </span>
             )}
           </div>
-          <div className="queue-grid">
+          <div className="queue-grid" role="radiogroup" aria-label={t('common:selectQueue')}>
             {ALL_QUEUES.map(q => (
               <button
                 key={q}
+                role="radio"
+                aria-checked={viewQueue === q}
                 onClick={() => handleQueueSelect(q)}
                 className={`queue-btn ${viewQueue === q ? 'active' : ''}`}
               >
@@ -263,7 +254,7 @@ const App: React.FC = () => {
         </section>
 
         {/* Visualization Card */}
-        <section className="glass-card viz-card">
+        <section className="glass-card viz-card" aria-label={t('common:schedule')}>
           <div className="viz-glow"></div>
 
           <div className="viz-header">
@@ -281,13 +272,13 @@ const App: React.FC = () => {
           </div>
 
           {status === 'loading' && !isUsingCache ? (
-            <div className="state-container">
-              <RefreshCw size={32} className="spin-icon opacity-50" />
+            <div className="state-container" role="status" aria-label={t('common:loading')}>
+              <RefreshCw size={32} className="spin-icon opacity-50" aria-hidden="true" />
             </div>
           ) : status === 'error' && !isUsingCache ? (
-            <div className="state-container text-danger">
-              <div className="state-icon-box" style={{ background: 'var(--danger-bg)', color: 'var(--danger-text)', borderColor: 'var(--danger-text)' }}>
-                <AlertTriangle size={32} />
+            <div className="state-container" role="alert">
+              <div className="state-icon-box state-icon-box--danger">
+                <AlertTriangle size={32} aria-hidden="true" />
               </div>
               <p className="font-medium">{serverUnavailable ? t('errors:serverUnavailable') : t('errors:loadingError')}</p>
               <p className="text-xs mt-1">
@@ -296,39 +287,35 @@ const App: React.FC = () => {
                   : t('errors:loadingErrorDesc')}
               </p>
             </div>
+          ) : scheduleData?.available === false ? (
+            <div className="state-container" role="status">
+              <div className="state-icon-box state-icon-box--warning">
+                <ClockIcon size={24} aria-hidden="true" />
+              </div>
+              <p className="font-medium">{scheduleData.message || t('errors:scheduleNotPublished')}</p>
+              <p className="text-xs mt-1">{t('errors:scheduleNotPublishedDesc')}</p>
+            </div>
           ) : !scheduleData || !currentQueueData ? (
-            <div className="state-container">
-              {selectedDate > getLocalISODate() ? (
-                <>
-                  <div className="state-icon-box" style={{ color: 'var(--warning-text)', background: 'var(--warning-bg)' }}>
-                    <ClockIcon size={24} />
-                  </div>
-                  <p className="font-medium">{t('errors:scheduleNotPublished')}</p>
-                  <p className="text-xs mt-1">{t('errors:scheduleNotPublishedDesc')}</p>
-                </>
-              ) : (
-                <>
-                  <div className="state-icon-box">
-                    <Zap size={24} className="text-muted" />
-                  </div>
-                  <p className="font-medium">{t('errors:noData')}</p>
-                </>
-              )}
+            <div className="state-container" role="status">
+              <div className="state-icon-box">
+                <Zap size={24} className="text-muted" aria-hidden="true" />
+              </div>
+              <p className="font-medium">{scheduleData?.error || t('errors:noData')}</p>
             </div>
           ) : (
             <>
               {/* Text Summary Grid */}
-              <div className="text-summary-grid">
+              <div className="text-summary-grid" role="list" aria-label={t('common:schedule')}>
                 {currentQueueData.intervals.length > 0 ? (
                   currentQueueData.intervals.map((interval, idx) => (
-                    <div key={idx} className="outage-chip">
-                      <ZapOff size={16} style={{ marginRight: '8px', opacity: 0.8 }} />
+                    <div key={idx} className="outage-chip" role="listitem">
+                      <ZapOff size={16} className="outage-chip-icon" aria-hidden="true" />
                       <span>{interval.start} — {interval.end}</span>
                     </div>
                   ))
                 ) : (
-                  <div className="no-outages-msg">
-                    <Zap size={20} style={{ marginRight: '12px' }} />
+                  <div className="no-outages-msg" role="listitem">
+                    <Zap size={20} className="no-outages-icon" aria-hidden="true" />
                     <span>{t('ui:timeline.noOutages')}</span>
                   </div>
                 )}
