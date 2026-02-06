@@ -20,6 +20,14 @@ const ALL_QUEUES = [
   '6.1', '6.2'
 ];
 
+const hasUsableSchedule = (data: ScheduleResponse | null | undefined): data is ScheduleResponse => {
+  return !!data
+    && data.success
+    && data.available !== false
+    && Array.isArray(data.queues)
+    && data.queues.length > 0;
+};
+
 const App: React.FC = () => {
   const { t, i18n } = useTranslation(['common', 'ui', 'errors']);
   useLanguageSync(); // Синхронізація мови з backend
@@ -28,6 +36,10 @@ const App: React.FC = () => {
   const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(null);
   const [isUsingCache, setIsUsingCache] = useState(false);
   const [serverUnavailable, setServerUnavailable] = useState(false);
+  const [isOffline, setIsOffline] = useState<boolean>(() => {
+    if (typeof navigator === 'undefined') return false;
+    return !navigator.onLine;
+  });
 
   const currentLocale = i18n.language === 'en' ? 'en-US' : 'uk-UA';
 
@@ -54,6 +66,21 @@ const App: React.FC = () => {
     localStorage.setItem('theme', theme);
   }, [theme]);
 
+  useEffect(() => {
+    const updateOnlineStatus = () => {
+      setIsOffline(!navigator.onLine);
+    };
+
+    updateOnlineStatus();
+    window.addEventListener('online', updateOnlineStatus);
+    window.addEventListener('offline', updateOnlineStatus);
+
+    return () => {
+      window.removeEventListener('online', updateOnlineStatus);
+      window.removeEventListener('offline', updateOnlineStatus);
+    };
+  }, []);
+
   const toggleTheme = () => {
     // Disable transitions during theme change to prevent "paint storm"
     const root = window.document.documentElement;
@@ -70,6 +97,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const init = async () => {
       setStatus('loading');
+      const offlineNow = typeof navigator !== 'undefined' && !navigator.onLine;
 
       const cachedKey = `${CACHE_KEYS.SCHEDULE_PREFIX}${selectedDate}`;
       const cachedData = getFromCache<ScheduleResponse>(cachedKey);
@@ -102,7 +130,21 @@ const App: React.FC = () => {
           return;
         }
 
-        if (data) {
+        if (offlineNow && cachedData) {
+          setScheduleData(cachedData);
+          setIsUsingCache(true);
+          setStatus('success');
+          return;
+        }
+
+        if (data?.available === false) {
+          setScheduleData(data);
+          setIsUsingCache(false);
+          setStatus('success');
+          return;
+        }
+
+        if (hasUsableSchedule(data)) {
           setScheduleData(data);
           setIsUsingCache(false);
           setStatus('success');
@@ -115,10 +157,12 @@ const App: React.FC = () => {
         }
       } catch (err) {
         console.error("Network error:", err);
-        if (!cachedData) {
-          setStatus('error');
-        } else {
+        if (cachedData) {
+          setScheduleData(cachedData);
+          setIsUsingCache(true);
           setStatus('success');
+        } else {
+          setStatus('error');
         }
       }
     };
@@ -137,6 +181,7 @@ const App: React.FC = () => {
     setSelectedDate(date);
     setStatus('loading');
     setServerUnavailable(false);
+    const offlineNow = typeof navigator !== 'undefined' && !navigator.onLine;
 
     const cachedKey = `${CACHE_KEYS.SCHEDULE_PREFIX}${date}`;
     const cachedData = getFromCache<ScheduleResponse>(cachedKey);
@@ -161,12 +206,38 @@ const App: React.FC = () => {
         }
         return;
       }
-      setScheduleData(data);
-      setIsUsingCache(false);
-      setStatus('success');
+      if (offlineNow && cachedData) {
+        setScheduleData(cachedData);
+        setIsUsingCache(true);
+        setStatus('success');
+        return;
+      }
+      if (data.available === false) {
+        setScheduleData(data);
+        setIsUsingCache(false);
+        setStatus('success');
+        return;
+      }
+      if (hasUsableSchedule(data)) {
+        setScheduleData(data);
+        setIsUsingCache(false);
+        setStatus('success');
+      } else if (!cachedData) {
+        setScheduleData(null);
+        setIsUsingCache(false);
+        setStatus('success');
+      } else {
+        setStatus('success');
+      }
     } catch (err) {
-      if (!cachedData) setScheduleData(null);
-      setStatus('error');
+      if (cachedData) {
+        setScheduleData(cachedData);
+        setIsUsingCache(true);
+        setStatus('success');
+      } else {
+        setScheduleData(null);
+        setStatus('error');
+      }
     }
   };
 
@@ -182,6 +253,8 @@ const App: React.FC = () => {
     return selectedDate === getLocalISODate();
   }, [selectedDate]);
 
+  const showCacheBanner = isUsingCache && (serverUnavailable || isOffline);
+
   return (
     <div className="app-root">
       <BackgroundEffects effect="snow" enabled={true} />
@@ -189,7 +262,9 @@ const App: React.FC = () => {
 
       <Header
         status={status}
-        isUsingCache={isUsingCache}
+        isOffline={isOffline}
+        serverUnavailable={serverUnavailable}
+        showCacheBanner={showCacheBanner}
         currentQueueData={currentQueueData}
         isToday={isToday}
         theme={theme}

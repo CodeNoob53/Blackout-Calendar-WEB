@@ -11,7 +11,9 @@ import { QueueData, FetchStatus } from '../../types';
 
 interface HeaderProps {
   status: FetchStatus;
-  isUsingCache: boolean;
+  isOffline: boolean;
+  serverUnavailable: boolean;
+  showCacheBanner: boolean;
   currentQueueData?: QueueData;
   isToday: boolean;
   theme: 'light' | 'dark';
@@ -20,7 +22,9 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   status,
-  isUsingCache,
+  isOffline,
+  serverUnavailable,
+  showCacheBanner,
   currentQueueData,
   isToday,
   theme,
@@ -36,7 +40,7 @@ const Header: React.FC<HeaderProps> = ({
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout>;
 
-    if (isUsingCache) {
+    if (showCacheBanner) {
       timer = setTimeout(() => {
         setShowBanner(true);
       }, 5000);
@@ -45,7 +49,13 @@ const Header: React.FC<HeaderProps> = ({
     }
 
     return () => clearTimeout(timer);
-  }, [isUsingCache]);
+  }, [showCacheBanner]);
+
+  const bannerMessage = isOffline
+    ? t('ui:header.offlineCached')
+    : serverUnavailable
+      ? t('ui:header.serverUnavailableCached')
+      : t('ui:header.offlineCached');
 
   // Спеціальний обробник для відкриття сповіщень з бургер-меню
   const handleOpenNotificationsFromMenu = () => {
@@ -138,10 +148,10 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
 
-      {showBanner && (
+      {showBanner && showCacheBanner && (
          <div className="offline-banner" role="alert">
             <WifiOff size={12} aria-hidden="true" />
-            {t('ui:header.offline')}
+            {bannerMessage}
          </div>
       )}
 

@@ -1,6 +1,7 @@
 {
   "header": {
-    "offline": "Server is not responding. Showing cached schedule."
+    "offlineCached": "You are offline. Showing cached schedule.",
+    "serverUnavailableCached": "Server is not responding. Showing cached schedule."
   },
   "clock": {
     "now": "Now"
