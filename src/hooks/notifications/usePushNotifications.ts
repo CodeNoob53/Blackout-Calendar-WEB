@@ -161,7 +161,28 @@ export const usePushNotifications = ({
 
           if (axios.isAxiosError(error) && error.response?.status === 404) {
             try {
-              await subscribeToPushNotifications(pushSubscription, currentQueue, ['all']);
+              // Get fresh subscription from Service Worker instead of using stale state
+              const registration = await navigator.serviceWorker.ready;
+              let freshSubscription = await registration.pushManager.getSubscription();
+
+              // If Service Worker also doesn't have subscription, create a new one
+              if (!freshSubscription) {
+                logger.debug('No subscription in Service Worker, creating new one...');
+                const publicKey = await getVapidPublicKey();
+                freshSubscription = await registration.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlBase64ToUint8Array(publicKey) as any
+                });
+              }
+
+              // Re-subscribe to backend with fresh subscription
+              await subscribeToPushNotifications(freshSubscription, currentQueue, ['all']);
+              
+              // Update local state with fresh subscription
+              setPushSubscription(freshSubscription);
+              setIsPushEnabled(true);
+              localStorage.setItem('push_synced_queue', currentQueue);
+              
               logger.debug('Re-subscribed to backend successfully with queue');
 
               addNotification({
@@ -171,6 +192,9 @@ export const usePushNotifications = ({
               });
             } catch (finalError) {
               logger.error('Failed to re-subscribe to backend:', finalError);
+              // Reset state on complete failure
+              setPushSubscription(null);
+              setIsPushEnabled(false);
             }
           } else {
             setTimeout(async () => {
