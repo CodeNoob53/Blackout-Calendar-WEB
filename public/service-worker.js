@@ -183,7 +183,7 @@ function getNotificationOptions(data) {
       url
     },
     tag: notificationTag,
-    renotify: notificationType === 'emergency' || notificationType === 'emergency_blackout', // Renotify for emergencies
+    renotify: data.renotify || notificationType === 'emergency' || notificationType === 'emergency_blackout',
     silent: false
   };
 

@@ -107,6 +107,7 @@ export const usePushNotifications = ({
 
       setPushSubscription(null);
       setIsPushEnabled(false);
+      localStorage.removeItem('push_synced_queue');
 
       setTimeout(() => {
         checkPushSubscription();
@@ -143,9 +144,17 @@ export const usePushNotifications = ({
 
   useEffect(() => {
     if (pushSubscription && currentQueue) {
+      // Skip update if queue hasn't changed since last sync
+      const lastSyncedQueue = localStorage.getItem('push_synced_queue');
+      if (lastSyncedQueue === currentQueue) {
+        logger.debug('Queue already synced, skipping update');
+        return;
+      }
+
       const timeoutId = setTimeout(async () => {
         try {
           await updateNotificationQueue(pushSubscription.endpoint, currentQueue, ['all']);
+          localStorage.setItem('push_synced_queue', currentQueue);
           logger.debug('Queue updated successfully');
         } catch (error: any) {
           logger.warn('Failed to update queue, subscription might be missing on backend. Attempting to re-sync...', error);
