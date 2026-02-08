@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react';
-import axios from 'axios';
 import { TFunction } from 'i18next';
 import {
   getVapidPublicKey,
@@ -147,84 +146,69 @@ export const usePushNotifications = ({
     }
   }, [sendSystemNotification, subscribeToPush, t]);
 
+  // Re-register existing push subscription with backend on load (fixes DB wipe after deploy:
+  // user keeps subscription in browser, we just write it back to DB without creating a new one)
   useEffect(() => {
-    if (pushSubscription && !currentQueue) {
-      const timeoutId = setTimeout(async () => {
-        try {
-          await subscribeToPushNotifications(pushSubscription, undefined, ['all']);
+    if (!pushSubscription) return;
+
+    const queue =
+      currentQueue !== undefined && currentQueue !== null
+        ? currentQueue
+        : (typeof localStorage !== 'undefined' ? localStorage.getItem('push_synced_queue') : null) ?? undefined;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        await subscribeToPushNotifications(pushSubscription, queue ?? undefined, ['all']);
+        if (queue) {
+          localStorage.setItem('push_synced_queue', queue);
+        } else {
           localStorage.removeItem('push_synced_queue');
-          logger.debug('Push subscription synced with backend (no queue)');
-        } catch (error) {
-          logger.warn('Failed to sync push subscription without queue:', error);
         }
-      }, 2000);
+        logger.debug('Push subscription re-registered with backend');
+      } catch (error) {
+        logger.warn('Failed to re-register push subscription with backend (e.g. after DB wipe)', error);
+      }
+    }, 1500);
 
-      return () => clearTimeout(timeoutId);
-    }
-  }, [currentQueue, pushSubscription]);
+    return () => clearTimeout(timeoutId);
+  }, [pushSubscription, currentQueue]);
 
+  // When user has a queue selected: try lightweight update first; on any failure re-register
+  // existing subscription (never create new one — browser would require user gesture).
   useEffect(() => {
-    if (pushSubscription && currentQueue) {
-      const timeoutId = setTimeout(async () => {
+    if (!pushSubscription || !currentQueue) return;
+
+    const timeoutId = setTimeout(async () => {
+      try {
+        await updateNotificationQueue(pushSubscription.endpoint, currentQueue, ['all']);
+        localStorage.setItem('push_synced_queue', currentQueue);
+        logger.debug('Queue updated successfully');
+      } catch (error: any) {
+        logger.warn('Failed to update queue, subscription might be missing on backend. Re-registering existing subscription...', error);
+
         try {
-          await updateNotificationQueue(pushSubscription.endpoint, currentQueue, ['all']);
-          localStorage.setItem('push_synced_queue', currentQueue);
-          logger.debug('Queue updated successfully');
-        } catch (error: any) {
-          logger.warn('Failed to update queue, subscription might be missing on backend. Attempting to re-sync...', error);
+          const registration = await navigator.serviceWorker.ready;
+          const existingSubscription = await registration.pushManager.getSubscription();
 
-          if (axios.isAxiosError(error) && error.response?.status === 404) {
-            try {
-              // Get fresh subscription from Service Worker instead of using stale state
-              const registration = await navigator.serviceWorker.ready;
-              let freshSubscription = await registration.pushManager.getSubscription();
-
-              // If Service Worker also doesn't have subscription, create a new one
-              if (!freshSubscription) {
-                logger.debug('No subscription in Service Worker, creating new one...');
-                const publicKey = await getVapidPublicKey();
-                freshSubscription = await registration.pushManager.subscribe({
-                  userVisibleOnly: true,
-                  applicationServerKey: urlBase64ToUint8Array(publicKey) as any
-                });
-              }
-
-              // Re-subscribe to backend with fresh subscription
-              await subscribeToPushNotifications(freshSubscription, currentQueue, ['all']);
-              
-              // Update local state with fresh subscription
-              setPushSubscription(freshSubscription);
-              setIsPushEnabled(true);
-              localStorage.setItem('push_synced_queue', currentQueue);
-              
-              logger.debug('Re-subscribed to backend successfully with queue');
-
-              addNotification({
-                title: t('notifications:subscriptionRestored'),
-                message: t('notifications:subscriptionRestoredDesc'),
-                type: 'success'
-              });
-            } catch (finalError) {
-              logger.error('Failed to re-subscribe to backend:', finalError);
-              // Reset state on complete failure
-              setPushSubscription(null);
-              setIsPushEnabled(false);
-            }
+          if (existingSubscription) {
+            await subscribeToPushNotifications(existingSubscription, currentQueue, ['all']);
+            localStorage.setItem('push_synced_queue', currentQueue);
+            logger.debug('Existing push subscription re-registered with backend');
+            addNotification({
+              title: t('notifications:subscriptionRestored'),
+              message: t('notifications:subscriptionRestoredDesc'),
+              type: 'success'
+            });
           } else {
-            setTimeout(async () => {
-              try {
-                await updateNotificationQueue(pushSubscription.endpoint, currentQueue, ['all']);
-                logger.debug('Queue updated successfully on retry');
-              } catch (retryError) {
-                logger.error('Failed to update queue after retry:', retryError);
-              }
-            }, 2000);
+            logger.warn('No existing subscription in browser; cannot re-register without user action');
           }
+        } catch (finalError) {
+          logger.error('Failed to re-register push subscription:', finalError);
         }
-      }, 2000);
+      }
+    }, 2000);
 
-      return () => clearTimeout(timeoutId);
-    }
+    return () => clearTimeout(timeoutId);
   }, [addNotification, currentQueue, pushSubscription, t]);
 
   return {
