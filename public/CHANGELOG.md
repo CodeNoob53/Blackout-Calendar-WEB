@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [2.2.3] - 2026-02-08
+
+### Fixed
+- **Push Notification Resubscription**: Fixed issue where resubscription failed when backend returned 404 (subscription not found). The system now fetches a fresh subscription from Service Worker instead of using stale state, and creates a new subscription if needed.
+
+---
+
 ## [2.2.2] - 2026-02-06
 
 ### Added
